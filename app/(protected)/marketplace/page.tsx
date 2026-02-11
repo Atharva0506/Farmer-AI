@@ -1,8 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { MarketplaceCard } from "@/components/marketplace-card"
-import { MarketplaceFilters } from "@/components/marketplace-filters"
+import { MarketplaceCard } from "@/components/features/market/marketplace-card"
+import { MarketplaceFilters } from "@/components/features/market/marketplace-filters"
 import { useLanguage } from "@/lib/language-context"
 
 interface Listing {

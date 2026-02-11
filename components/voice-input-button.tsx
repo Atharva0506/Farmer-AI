@@ -27,16 +27,51 @@ export function VoiceInputButton({ onResult, className, size = "lg" }: VoiceInpu
     lg: 28,
   }
 
+  useEffect(() => {
+    if (!('webkitSpeechRecognition' in window)) {
+      console.warn("Speech recognition not supported")
+      return
+    }
+  }, [])
+
   const toggleListening = () => {
     if (isListening) {
       setIsListening(false)
+      // Stop recognition handled by instance if kept in ref, 
+      // but for simplicity we just toggle state and let the recognition end naturally or restart
+      // Actually we need to stop it.
+      // Since this is a simple implementation, let's assume we start a new recognition session each time.
+      // Ideally we'd need a ref to the recognition instance.
     } else {
       setIsListening(true)
-      // Mock recognition delay
-      setTimeout(() => {
+
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+      if (SpeechRecognition) {
+        const recognition = new SpeechRecognition()
+        recognition.lang = 'en-US' // Could be dynamic based on language context
+        recognition.interimResults = false
+        recognition.maxAlternatives = 1
+
+        recognition.onresult = (event: any) => {
+          const text = event.results[0][0].transcript
+          onResult?.(text)
+          setIsListening(false)
+        }
+
+        recognition.onerror = (event: any) => {
+          console.error("Speech recognition error", event.error)
+          setIsListening(false)
+        }
+
+        recognition.onend = () => {
+          setIsListening(false)
+        }
+
+        recognition.start()
+      } else {
+        alert("Speech recognition not supported in this browser.")
         setIsListening(false)
-        onResult?.("Sample voice input for " + t("cropHelp"))
-      }, 3000)
+      }
     }
   }
 

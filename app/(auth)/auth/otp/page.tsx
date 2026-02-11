@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/input-otp"
 import { useLanguage } from "@/lib/language-context"
 
+import { signIn } from "next-auth/react"
+
 function OTPInputContent() {
     const { t } = useLanguage()
     const router = useRouter()
@@ -21,6 +23,8 @@ function OTPInputContent() {
 
     const [otp, setOtp] = useState("")
     const [timer, setTimer] = useState(30)
+    const [isLoading, setIsLoading] = useState(false)
+    const [error, setError] = useState("")
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -29,11 +33,31 @@ function OTPInputContent() {
         return () => clearInterval(interval)
     }, [])
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         if (otp.length === 6) {
-            // Mock verification
-            router.push(role === "buyer" ? "/buyer" : "/farmer")
+            setIsLoading(true)
+            setError("")
+
+            try {
+                const result = await signIn("credentials", {
+                    phone,
+                    otp,
+                    role: role.toUpperCase(),
+                    redirect: false,
+                })
+
+                if (result?.error) {
+                    setError("Invalid OTP or expired")
+                } else {
+                    router.push(role === "buyer" ? "/dashboard/buyer" : "/dashboard/farmer")
+                }
+            } catch (err) {
+                console.error(err)
+                setError("Something went wrong")
+            } finally {
+                setIsLoading(false)
+            }
         }
     }
 
@@ -65,13 +89,16 @@ function OTPInputContent() {
                         </InputOTPGroup>
                     </InputOTP>
 
+                    {/* Error message */}
+                    {error && <p className="text-destructive text-sm">{error}</p>}
+
                     <Button
                         type="submit"
                         size="lg"
                         className="w-full text-lg h-12"
-                        disabled={otp.length !== 6}
+                        disabled={otp.length !== 6 || isLoading}
                     >
-                        {t("verifyOTP")}
+                        {isLoading ? "Verifying..." : t("verifyOTP")}
                     </Button>
 
                     <div className="text-center">
@@ -84,6 +111,7 @@ function OTPInputContent() {
                                 variant="link"
                                 className="text-primary p-0 h-auto"
                                 onClick={() => setTimer(30)}
+                                type="button"
                             >
                                 {t("resendOTP")}
                             </Button>

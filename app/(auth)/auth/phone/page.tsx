@@ -15,11 +15,31 @@ function PhoneInputContent() {
     const role = searchParams.get("role") || "farmer"
 
     const [phone, setPhone] = useState("")
+    const [isLoading, setIsLoading] = useState(false)
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         if (phone.length === 10) {
-            router.push(`/auth/otp?role=${role}&phone=${phone}`)
+            setIsLoading(true)
+            try {
+                const res = await fetch("/api/auth/otp", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ phone }),
+                })
+
+                if (res.ok) {
+                    router.push(`/auth/otp?role=${role}&phone=${phone}`)
+                } else {
+                    // Handle error (show toast or alert)
+                    alert("Failed to send OTP")
+                }
+            } catch (error) {
+                console.error(error)
+                alert("Something went wrong")
+            } finally {
+                setIsLoading(false)
+            }
         }
     }
 
@@ -51,13 +71,15 @@ function PhoneInputContent() {
                             required
                         />
                     </div>
+                    {/* Error message display if needed */}
+
                     <Button
                         type="submit"
                         size="lg"
                         className="w-full text-lg h-12"
-                        disabled={phone.length !== 10}
+                        disabled={phone.length !== 10 || isLoading}
                     >
-                        {t("next")}
+                        {isLoading ? "Sending..." : t("next")}
                     </Button>
                 </div>
             </form>

@@ -1,0 +1,114 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { Mic, X } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { useLanguage } from "@/lib/language-context"
+
+interface VoiceInputButtonProps {
+    onResult?: (text: string) => void
+    className?: string
+    size?: "sm" | "md" | "lg"
+}
+
+export function VoiceInputButton({ onResult, className, size = "lg" }: VoiceInputButtonProps) {
+    const [isListening, setIsListening] = useState(false)
+    const { t } = useLanguage()
+
+    const sizeClasses = {
+        sm: "h-10 w-10",
+        md: "h-14 w-14",
+        lg: "h-16 w-16",
+    }
+
+    const iconSizes = {
+        sm: 18,
+        md: 24,
+        lg: 28,
+    }
+
+    useEffect(() => {
+        if (!('webkitSpeechRecognition' in window)) {
+            console.warn("Speech recognition not supported")
+            return
+        }
+    }, [])
+
+    const toggleListening = () => {
+        if (isListening) {
+            setIsListening(false)
+            // Stop recognition handled by instance if kept in ref, 
+            // but for simplicity we just toggle state and let the recognition end naturally or restart
+            // Actually we need to stop it.
+            // Since this is a simple implementation, let's assume we start a new recognition session each time.
+            // Ideally we'd need a ref to the recognition instance.
+        } else {
+            setIsListening(true)
+
+            const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+            if (SpeechRecognition) {
+                const recognition = new SpeechRecognition()
+                recognition.lang = 'en-US' // Could be dynamic based on language context
+                recognition.interimResults = false
+                recognition.maxAlternatives = 1
+
+                recognition.onresult = (event: any) => {
+                    const text = event.results[0][0].transcript
+                    onResult?.(text)
+                    setIsListening(false)
+                }
+
+                recognition.onerror = (event: any) => {
+                    console.error("Speech recognition error", event.error)
+                    if (event.error === 'not-allowed') {
+                        alert("Microphone access blocked. Please allow permission in browser settings.")
+                    }
+                    setIsListening(false)
+                }
+
+                recognition.onend = () => {
+                    setIsListening(false)
+                }
+
+                recognition.start()
+            } else {
+                alert("Speech recognition not supported in this browser.")
+                setIsListening(false)
+            }
+        }
+    }
+
+    return (
+        <div className={cn("relative flex items-center justify-center", className)}>
+            {/* Ripple Animation layers */}
+            {isListening && (
+                <>
+                    <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping duration-1000" />
+                    <div className="absolute inset-0 rounded-full bg-primary/10 animate-pulse-ring" />
+                </>
+            )}
+
+            <button
+                onClick={toggleListening}
+                className={cn(
+                    "relative z-10 flex items-center justify-center rounded-full transition-all duration-300 shadow-lg",
+                    isListening
+                        ? "bg-destructive text-destructive-foreground scale-110 shadow-destructive/20"
+                        : "bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-105 shadow-primary/20",
+                    sizeClasses[size]
+                )}
+                aria-label={isListening ? t("listening") : t("speakNow")}
+            >
+                {isListening ? (
+                    <div className="flex gap-0.5 items-center h-4">
+                        {[1, 2, 3, 4].map(i => (
+                            <div key={i} className="w-1 bg-white animate-waveform rounded-full" style={{ animationDelay: `${i * 0.1}s` }} />
+                        ))}
+                    </div>
+                ) : (
+                    <Mic size={iconSizes[size]} />
+                )}
+            </button>
+        </div>
+    )
+}

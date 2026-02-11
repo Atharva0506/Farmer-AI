@@ -1,9 +1,11 @@
 import React from "react"
 import type { Metadata, Viewport } from "next"
 import { Noto_Sans_Devanagari } from "next/font/google"
-import { ThemeProvider } from "next-themes"
+import { ThemeProvider } from "@/components/common/theme-provider"
 import { LanguageProvider } from "@/lib/language-context"
-import { AppShell } from "@/components/app-shell"
+import { AuthProvider } from "@/components/features/auth/auth-provider"
+import { WorkInProgressModal } from "@/components/work-in-progress-modal"
+import { Toaster } from "sonner"
 import "./globals.css"
 
 const notoSans = Noto_Sans_Devanagari({
@@ -38,8 +40,12 @@ export default function RootLayout({
       <body className={`${notoSans.variable} font-sans antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
           <LanguageProvider>
-            <AppShell>{children}</AppShell>
+            <AuthProvider>
+              <WorkInProgressModal />
+              {children}
+            </AuthProvider>
           </LanguageProvider>
+          <Toaster position="top-center" />
         </ThemeProvider>
       </body>
     </html>

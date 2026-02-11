@@ -34,16 +34,19 @@ function getStoredLanguage(): Language | null {
 }
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguageState] = useState<Language>(() => {
-    // prefer stored -> navigator -> default (mr for farmer-first UX)
-    try {
-      const stored = typeof window !== "undefined" ? getStoredLanguage() : null
-      if (stored) return stored
-    } catch (e) {
-      // ignore
+  const [language, setLanguageState] = useState<Language>("en")
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+    const stored = getStoredLanguage()
+    if (stored) {
+      setLanguageState(stored)
+      return
     }
-    return detectNavigatorLanguage() || "mr"
-  })
+    const nav = detectNavigatorLanguage()
+    if (nav) setLanguageState(nav)
+  }, [])
 
   useEffect(() => {
     try {

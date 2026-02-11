@@ -5,18 +5,23 @@ import { usePathname } from "next/navigation"
 import { Home, MessageCircle, ShoppingBag, FileText, User } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useLanguage } from "@/lib/language-context"
+import { useSession } from "next-auth/react"
 
 const navItems = [
-  { href: "/farmer", icon: Home, labelKey: "home" },
+  { href: "/dashboard", icon: Home, labelKey: "home" }, // Placeholder, dynamic logic below
   { href: "/assistant", icon: MessageCircle, labelKey: "assistant" },
   { href: "/marketplace", icon: ShoppingBag, labelKey: "market" },
   { href: "/schemes", icon: FileText, labelKey: "schemes" },
-  { href: "/farmer", icon: User, labelKey: "profile" },
+  { href: "/dashboard/profile", icon: User, labelKey: "profile" },
 ]
 
 export function BottomNav() {
   const pathname = usePathname()
   const { t } = useLanguage()
+  const { data: session } = useSession()
+
+  const role = session?.user?.role || "FARMER"
+  const homeLink = role === "BUYER" ? "/dashboard/buyer" : "/dashboard/farmer"
 
   if (pathname === "/onboarding") return null
 
@@ -28,11 +33,16 @@ export function BottomNav() {
     >
       <div className="flex items-center justify-around py-2">
         {navItems.map((item) => {
-          const isActive = pathname === item.href
+          let href = item.href
+          if (item.labelKey === "home") {
+            href = homeLink
+          }
+
+          const isActive = pathname === href
           return (
             <Link
-              key={item.href}
-              href={item.href}
+              key={item.labelKey} // Changed key to labelKey since href changes
+              href={href}
               className={cn(
                 "flex flex-col items-center gap-0.5 px-3 py-1.5 text-xs transition-colors rounded-lg min-w-[56px]",
                 isActive

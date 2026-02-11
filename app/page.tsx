@@ -5,8 +5,8 @@ import { Sprout, ShoppingBag, Mic, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { useLanguage } from "@/lib/language-context"
-import { LanguageSwitcher } from "@/components/language-switcher"
-import { ThemeToggle } from "@/components/theme-toggle"
+import { LanguageSwitcher } from "@/components/common/language-switcher"
+import { ThemeToggle } from "@/components/common/theme-toggle"
 
 export default function LandingPage() {
   const { t } = useLanguage()
