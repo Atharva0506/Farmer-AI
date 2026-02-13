@@ -104,7 +104,7 @@ For organic treatments, prefer neem-based, cow urine, or traditional Indian reme
     }
 
     const { object } = await generateObject({
-      model: google("gemini-2.0-flash"),
+      model: google("gemini-2.5-flash"),
       schema: diseaseReportSchema,
       system: systemPrompt,
       messages,

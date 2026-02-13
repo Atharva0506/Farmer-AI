@@ -1,10 +1,10 @@
 "use client"
 
 import { useState, useRef, useEffect, useCallback } from "react"
-import { Search, MessageCircle, ArrowRight, Volume2, Loader2, Send, Mic, MicOff, Bot, Sparkles, ExternalLink, FileCheck, ChevronDown, ChevronUp } from "lucide-react"
+import { Search, MessageCircle, ArrowRight, Loader2, Send, Bot, Sparkles, ExternalLink, FileCheck, ChevronDown, ChevronUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { VoiceInputButton } from "@/components/features/assistant/voice-input-button"
+
 import { useLanguage } from "@/lib/language-context"
 import { cn } from "@/lib/utils"
 
@@ -242,12 +242,7 @@ export default function SchemesPage() {
                     </button>
                   ))}
                 </div>
-                <div className="flex items-center gap-2 mt-4">
-                  <span className="text-xs text-muted-foreground">
-                    {language === "mr" ? "किंवा आवाजाने उत्तर द्या" : language === "hi" ? "या आवाज़ से जवाब दें" : "Or answer with voice"}
-                  </span>
-                  <VoiceInputButton size="sm" onResult={(text) => handleAnswer(text)} />
-                </div>
+
               </CardContent>
             </Card>
           )}
@@ -400,8 +395,8 @@ export default function SchemesPage() {
                   onChange={(e) => setAiQuestion(e.target.value)}
                   placeholder={
                     language === "mr" ? "उदा: PM-KISAN साठी मला पात्रता आहे का?" :
-                    language === "hi" ? "उदा: क्या मैं PM-KISAN के लिए पात्र हूं?" :
-                    "e.g. Am I eligible for PM-KISAN?"
+                      language === "hi" ? "उदा: क्या मैं PM-KISAN के लिए पात्र हूं?" :
+                        "e.g. Am I eligible for PM-KISAN?"
                   }
                   onKeyDown={(e) => { if (e.key === "Enter") askAIAboutSchemes() }}
                   className="flex-1 rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"

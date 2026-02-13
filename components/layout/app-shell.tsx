@@ -5,8 +5,7 @@ import { AppHeader } from "./app-header"
 import { BottomNav } from "./bottom-nav"
 import { SidebarNav } from "./sidebar-nav"
 import { DesktopHeader } from "./desktop-header"
-import { FloatingMicButton } from "../features/assistant/floating-mic-button"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import type { ReactNode } from "react"
 import { cn } from "@/lib/utils"
 
@@ -17,9 +16,6 @@ export function AppShell({ children, userRole }: { children: ReactNode; userRole
     const isLanding = pathname === "/"
     const isAuth = pathname?.startsWith("/auth")
     const isPublic = isOnboarding || isLanding || isAuth
-
-    // Auto-collapse on small screens usually handled by CSS (hidden md:flex), 
-    // but for the margin adjustment we need state.
 
     if (isPublic) {
         return <>{children}</>
@@ -43,7 +39,6 @@ export function AppShell({ children, userRole }: { children: ReactNode; userRole
                 <main className="flex-1 pb-20 md:pb-0">{children}</main>
             </div>
             <BottomNav />
-            <FloatingMicButton />
         </div>
     )
 }

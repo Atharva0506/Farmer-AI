@@ -39,7 +39,7 @@ export async function POST(req: Request) {
     // If there's a follow-up question, search the web and stream a response
     if (question) {
       const result = streamText({
-        model: google("gemini-2.0-flash"),
+        model: google("gemini-2.5-flash"),
         tools: {
           google_search: google.tools.googleSearch({}),
         },
@@ -89,7 +89,7 @@ Scheme names should be in ${langName} language if possible, descriptions in ${la
 
     // Use generateText with google_search tool first, then parse into structured format
     const webSearchResult = await generateText({
-      model: google("gemini-2.0-flash"),
+      model: google("gemini-2.5-flash"),
       tools: {
         google_search: google.tools.googleSearch({}),
       },
@@ -98,7 +98,7 @@ Scheme names should be in ${langName} language if possible, descriptions in ${la
 
     // Now parse the web search results into structured scheme data
     const searchResult = await generateObject({
-      model: google("gemini-2.0-flash"),
+      model: google("gemini-2.5-flash"),
       schema: schemeSchema,
       prompt: `Based on the following web search results about Indian agricultural schemes, extract and structure the scheme information.\n\nWeb Search Results:\n${webSearchResult.text}\n\nFarmer Profile:\n${farmerProfile}\n\nExtract 8-12 schemes from the results. Assign match scores (1-99) based on how well each scheme matches this farmer\'s profile. Scheme names and descriptions should be in ${langName}.`,
     });
