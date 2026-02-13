@@ -14,7 +14,7 @@ interface ChatInputProps {
     onFileSelect: (file: File) => void
     onClearFile: () => void
     selectedFile: File | null
-    stop: () => void
+    stop: () => void | Promise<void>
     mode: 'think' | 'research'
     setMode: (mode: 'think' | 'research') => void
 }
