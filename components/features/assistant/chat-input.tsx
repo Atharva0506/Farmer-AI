@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useLanguage } from "@/lib/language-context"
 
+const langCodeMap: Record<string, string> = { mr: "mr-IN", hi: "hi-IN", en: "en-US" }
+
 interface ChatInputProps {
     input: string
     setInput: (value: string) => void
@@ -31,7 +33,7 @@ export function ChatInput({
     mode,
     setMode
 }: ChatInputProps) {
-    const { t } = useLanguage()
+    const { t, language } = useLanguage()
     const textareaRef = useRef<HTMLTextAreaElement>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
     const [isListening, setIsListening] = useState(false)
@@ -59,7 +61,7 @@ export function ChatInput({
             recognitionRef.current.continuous = false
             recognitionRef.current.interimResults = false
             // Default to English, but ideal to match app language
-            recognitionRef.current.lang = 'en-US'
+            recognitionRef.current.lang = langCodeMap[language] || 'en-US'
 
             recognitionRef.current.onstart = () => setIsListening(true)
 

@@ -4,11 +4,59 @@ import { z } from 'zod';
 
 export const maxDuration = 60;
 
+// Convert UIMessage parts format (from @ai-sdk/react v3) to AI SDK compatible messages
+function convertMessages(messages: any[]) {
+    return messages
+        .filter((msg: any) => {
+            if (typeof msg.content === 'string' && msg.content.length > 0) return true;
+            if (Array.isArray(msg.content) && msg.content.length > 0) return true;
+            if (Array.isArray(msg.parts) && msg.parts.length > 0) return true;
+            return false;
+        })
+        .map((msg: any) => {
+            // Already in correct { role, content: string } format
+            if (typeof msg.content === 'string' && msg.content.length > 0) {
+                return { role: msg.role, content: msg.content };
+            }
+            // Already in multipart content format
+            if (Array.isArray(msg.content) && msg.content.length > 0) {
+                return { role: msg.role, content: msg.content };
+            }
+            // Convert UIMessage parts[] to content
+            const parts = msg.parts || [];
+            const textParts = parts.filter((p: any) => p.type === 'text');
+            const fileParts = parts.filter((p: any) => p.type === 'file' || p.type === 'image');
+
+            if (fileParts.length > 0) {
+                // Build multipart content array for image + text
+                const content: any[] = [];
+                for (const fp of fileParts) {
+                    if (fp.type === 'image' && fp.image) {
+                        content.push({ type: 'image', image: fp.image });
+                    } else if (fp.type === 'file' && fp.data) {
+                        content.push({ type: 'image', image: fp.data });
+                    }
+                }
+                for (const tp of textParts) {
+                    content.push({ type: 'text', text: tp.text });
+                }
+                return { role: msg.role, content };
+            }
+
+            // Text-only: join all text parts
+            const text = textParts.map((p: any) => p.text).join('');
+            return { role: msg.role, content: text };
+        });
+}
+
 export async function POST(req: Request) {
     try {
         const { messages, data } = await req.json();
         const mode = data?.mode || 'think';
         const voiceMode = data?.voiceMode || false;
+
+        // Convert messages from UIMessage parts format to AI SDK format
+        const convertedMessages = convertMessages(messages);
 
         const voiceInstructions = voiceMode
             ? `\nIMPORTANT: You are in VOICE MODE (like Alexa/Google Assistant).
@@ -43,7 +91,7 @@ Rules:
 - For schemes, always mention eligibility criteria and required documents.
 - Suggest next logical action the farmer should take.
 - If an image is provided with the message, analyze it carefully for crop diseases, pest damage, or nutrient deficiency.`,
-            messages,
+            messages: convertedMessages,
             tools: {
                 cropHelp: tool({
                     description: 'Provide detailed crop guidance including planting, fertilizer schedule, pest management, and harvest tips for Indian farming conditions.',

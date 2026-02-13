@@ -33,18 +33,19 @@ export function AIChatBubble({ message, isAI = false, timestamp, onSpeak }: AICh
                     )}
                 >
                     {/* @ts-ignore */}
-                    <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        className="prose prose-sm dark:prose-invert break-words"
-                        components={{
-                            a: ({ node, ...props }) => <a {...props} className="underline text-primary font-medium" target="_blank" rel="noopener noreferrer" />,
-                            p: ({ node, ...props }) => <p {...props} className="mb-2 last:mb-0" />,
-                            ul: ({ node, ...props }) => <ul {...props} className="list-disc pl-4 mb-2 last:mb-0" />,
-                            ol: ({ node, ...props }) => <ol {...props} className="list-decimal pl-4 mb-2 last:mb-0" />,
-                        }}
-                    >
-                        {message}
-                    </ReactMarkdown>
+                    <div className="prose prose-sm dark:prose-invert break-words">
+                        <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                                a: ({ node, ...props }) => <a {...props} className="underline text-primary font-medium" target="_blank" rel="noopener noreferrer" />,
+                                p: ({ node, ...props }) => <p {...props} className="mb-2 last:mb-0" />,
+                                ul: ({ node, ...props }) => <ul {...props} className="list-disc pl-4 mb-2 last:mb-0" />,
+                                ol: ({ node, ...props }) => <ol {...props} className="list-decimal pl-4 mb-2 last:mb-0" />,
+                            }}
+                        >
+                            {message}
+                        </ReactMarkdown>
+                    </div>
                 </div>
                 <div className="flex items-center gap-2 mt-1 px-1">
                     {timestamp && (

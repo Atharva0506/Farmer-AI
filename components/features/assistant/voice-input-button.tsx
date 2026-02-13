@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Mic, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useLanguage } from "@/lib/language-context"
@@ -11,9 +11,12 @@ interface VoiceInputButtonProps {
     size?: "sm" | "md" | "lg"
 }
 
+const langCodeMap: Record<string, string> = { mr: "mr-IN", hi: "hi-IN", en: "en-US" }
+
 export function VoiceInputButton({ onResult, className, size = "lg" }: VoiceInputButtonProps) {
     const [isListening, setIsListening] = useState(false)
-    const { t } = useLanguage()
+    const { t, language } = useLanguage()
+    const recognitionRef = useRef<any>(null)
 
     const sizeClasses = {
         sm: "h-10 w-10",
@@ -28,27 +31,24 @@ export function VoiceInputButton({ onResult, className, size = "lg" }: VoiceInpu
     }
 
     useEffect(() => {
-        if (!('webkitSpeechRecognition' in window)) {
+        if (typeof window !== 'undefined' && !('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
             console.warn("Speech recognition not supported")
-            return
         }
     }, [])
 
     const toggleListening = () => {
         if (isListening) {
+            recognitionRef.current?.stop()
             setIsListening(false)
-            // Stop recognition handled by instance if kept in ref, 
-            // but for simplicity we just toggle state and let the recognition end naturally or restart
-            // Actually we need to stop it.
-            // Since this is a simple implementation, let's assume we start a new recognition session each time.
-            // Ideally we'd need a ref to the recognition instance.
+            return
         } else {
             setIsListening(true)
 
             const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
             if (SpeechRecognition) {
                 const recognition = new SpeechRecognition()
-                recognition.lang = 'en-US' // Could be dynamic based on language context
+                recognition.lang = langCodeMap[language] || 'en-US'
+                recognitionRef.current = recognition
                 recognition.interimResults = false
                 recognition.maxAlternatives = 1
 

@@ -24,7 +24,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useLanguage } from "@/lib/language-context"
 import { WeatherWidget } from "@/components/features/dashboard/weather-widget"
-import { toast } from "sonner"
 // import { useSession } from "next-auth/react" // TODO: Enable when session is needed
 
 const quickActions = [
@@ -47,18 +46,10 @@ export default function FarmerDashboard() {
     })
 
     useEffect(() => {
-        const msg = "currently working on this not fully build"
-        console.log(msg)
-        toast(msg)
-
         if ("geolocation" in navigator) {
             navigator.geolocation.getCurrentPosition((position) => {
-                // Mock reverse geocoding or just use coordinates if API not available
-                // In a real app, call a geocoding API here
-                // For now, simulate a "detected" location update
-                setTimeout(() => {
-                    setLocation({ city: "Nashik, MH (Detected)", temp: "30", condition: "Sunny" })
-                }, 1000)
+                // In production, call a reverse geocoding API with position.coords
+                setLocation({ city: "Nashik, MH (Detected)", temp: "30", condition: "Sunny" })
             }, (error) => {
                 console.error("Error getting location:", error)
             })
