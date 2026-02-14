@@ -2,217 +2,117 @@
 
 > An AI-powered, voice-first agriculture assistant & marketplace built for Indian farmers.
 
-KrushiAI is not a traditional dashboard-heavy app.  
-It is an **AI-first farming companion** that helps farmers **talk, click a photo, and earn more** — with minimal reading or typing.
+KrushiAI is designed as a **simple, voice-driven farming companion** that helps farmers identify crop issues, access markets, and make better decisions — without complex dashboards or heavy text.
 
 ---
 
-## 🧠 Core Philosophy
+## 🎯 Problem Statement
 
-### Farmers talk. Apps should listen.
-Most Indian farmers are:
-- Semi-literate or illiterate
-- Comfortable with voice, not text
-- Using low-end Android phones
-- Distrustful of complex apps
+KrushiAI addresses three major challenges faced by Indian farmers:
 
-So KrushiAI is built with:
-- **Voice-first interaction**
-- **Minimal text**
-- **Large icons**
-- **Local languages**
-- **Trust-driven UX**
+### 1️⃣ Crop & Disease Confusion
+- Difficulty identifying crop diseases early  
+- Conflicting advice from local sources  
+- Yield loss and reduced income  
 
----
+### 2️⃣ Limited Market Access
+- Dependence on middlemen  
+- Lack of real-time price awareness  
+- Selling below fair market value  
 
-## 🎯 What Problem Are We Solving?
-
-### 1. Crop & Disease Confusion
-Farmers:
-- Can’t identify diseases early
-- Get conflicting advice
-- Lose yield & money
-
-### 2. Market Access
-Farmers:
-- Depend on middlemen
-- Don’t know real demand or prices
-- Sell below market value
-
-### 3. Information Overload
-Government & private schemes exist, but:
-- Eligibility is unclear
-- Forms are complex
-- Language is a barrier
+### 3️⃣ Complex Schemes & Information
+- Government schemes are hard to understand  
+- Language barriers  
+- Complicated forms and eligibility rules  
 
 ---
 
-## 🚀 MVP Scope (Current Focus)
+## 🚀 MVP Scope
 
-We are **NOT building everything at once**.
+The MVP focuses on validating:
 
-### ✅ MVP User Journey
+- Trust in AI assistance  
+- Voice-first usability  
+- Image-based crop diagnosis  
+- Farmer-to-buyer marketplace interaction  
 
-Onboarding
-↓
-AI Chat (Voice + Image)
-↓
-Marketplace (Buyers ↔ Farmers)
+### MVP Flow
 
-
-
-This MVP validates:
-- Trust in AI
-- Voice usability
-- Image-based crop help
-- Willingness to sell/buy via app
+Onboarding  
+↓  
+AI Assistant (Voice + Image)  
+↓  
+Marketplace (Farmers ↔ Buyers)
 
 ---
 
-## 🧩 Features (MVP)
+## 🧩 Core Features
 
-### 1️⃣ Onboarding
-- Language selection (Marathi / Hindi / English)
-- Voice instructions
-- Microphone & camera permissions
-- No forced login
+### 1️⃣ Voice-First Onboarding
+- Language selection (Marathi / Hindi / English)  
+- Voice-based guidance  
+- Simple permission setup (mic & camera)  
+- No mandatory login for initial use  
 
 ---
 
 ### 2️⃣ AI Assistant (Core Feature)
 
-**Primary Interface**
-- WhatsApp-style chat UI
-- Large floating microphone button
-- Voice waveform animation
-- Image upload (crop photo)
+**Interface**
+- WhatsApp-style chat UI  
+- Large floating microphone button  
+- Image upload for crop photos  
+- Voice responses with minimal text  
 
 **Capabilities**
-- Farmer speaks → AI understands intent
-- Farmer uploads crop image → AI gives guidance
-- AI responds in:
-  - Text (minimal)
-  - Voice (important)
-  - Visual cards (actions)
+- Voice intent detection  
+- Crop disease guidance via image  
+- Step-by-step farming advice  
+- AI responses in voice + simple text + visual cards  
 
-**Examples**
-- “माझ्या पिकावर डाग आलेत”
+Example use cases:
 - “This leaf is turning yellow”
-- Upload photo of crop disease
+- “माझ्या पिकावर डाग आलेत”
+- Upload crop image for diagnosis  
 
 ---
 
-### 3️⃣ Marketplace (Hybrid Access)
+### 3️⃣ Marketplace (Hybrid Access Model)
 
-#### Without Login
-- Browse crops for sale
-- Browse buyer requirements
-- View approximate location & price
+**Without Login**
+- Browse crop listings  
+- View buyer requirements  
+- See approximate pricing  
 
-#### With Login
-- Post crop listings
-- Post buyer requirements
-- Contact via call/chat
-- Build trust score over time
-
-**Why hybrid?**
-- Zero friction discovery
-- Authentication only when money/contact is involved
+**With Login**
+- Post crops for sale  
+- Post buying requirements  
+- Direct contact (call/chat)  
+- Build trust score over time  
 
 ---
 
-## 🗣️ Languages & Localization
+## 🌍 Localization Strategy
 
-### Supported
+Supported languages:
 - Marathi (default)
 - Hindi
 - English
 
-### Important Note
-Language switching is **not just translation**:
-- Crop names change
-- Terminology changes
-- Scheme names change
-- Tone changes
-
-AI responses must adapt culturally.
+Localization includes:
+- Regional crop names  
+- Local terminology  
+- Cultural tone adaptation  
+- Region-specific schemes  
 
 ---
 
-## 🎙️ Voice-First UX Rules
+## 🧱 Tech Stack
 
-Every major screen must have:
-- 🎤 Voice input button
-- 🔊 Speak / read aloud button
-- Minimal text
-- Large touch targets
-
-Text is secondary.  
-Voice is primary.
+- Next.js (App Router)  
+- TypeScript  
+- Tailwind CSS  
+- shadcn/ui  
+- Mobile-first responsive design  
 
 ---
-
-## 🧱 Tech Stack (Frontend)
-
-- **Next.js (App Router)**
-- **TypeScript**
-- **Tailwind CSS**
-- **shadcn/ui**
-- Mobile-first responsive design
-- Dark / Light mode
-- Accessibility-focused
-
----
-
-## 📱 Responsive Design Rules
-
-### Mobile (Primary)
-- Bottom navigation
-- Floating mic button
-- Single-column layout
-
-### Tablet
-- Card grids
-- Context panels
-
-### Desktop
-- Sidebar navigation
-- Dashboard layout (for buyers/admins)
-
----
-
-## 🧩 Key UI Components
-
-- `FloatingMicButton`
-- `VoiceWaveform`
-- `AIChatBubble`
-- `ImageUploadCard`
-- `CropAdviceCard`
-- `MarketplaceListingCard`
-- `LanguageSwitcher`
-- `BottomNav`
-- `SidebarNav`
-
----
-
-## 🤖 AI Interaction Model (Important)
-
-### ❌ What we do NOT do
-- No raw prompt writing by farmers
-- No exposing AI internals
-
-### ✅ What we do
-- Voice / text → intent detection
-- Intent → UI actions
-- AI guides user step-by-step
-
-**Example**
-User says:
-> “I want to sell wheat”
-
-Internally becomes:
-```json
-{
-  "intent": "sell_crop",
-  "crop": "wheat"
-}
