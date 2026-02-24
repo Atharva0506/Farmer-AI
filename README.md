@@ -1,218 +1,99 @@
-# ğŸŒ¾ KrushiAI (Working Name)
+# KrishiMitra (Farmer Helper) - Conversational AI Assistant
 
-> An AI-powered, voice-first agriculture assistant & marketplace built for Indian farmers.
+KrishiMitra is an advanced, voice-first AI assistant designed to empower Indian farmers with real-time agricultural intelligence. Built with **Next.js 16**, **AI SDK**, and **Google Gemini 2.5 Flash**, it offers a seamless multimodal experience (Voice + Text + Image) to solve day-to-day farming challenges.
 
-KrushiAI is not a traditional dashboard-heavy app.  
-It is an **AI-first farming companion** that helps farmers **talk, click a photo, and earn more** â€” with minimal reading or typing.
+![KrishiMitra AI](https://placehold.co/1200x600?text=KrishiMitra+AI+Dashboard)
 
----
+## íº€ Key Features
 
-## ğŸ§  Core Philosophy
+### í¾™ï¸ Conversational Voice AI
+- **Voice-First Interface**: Speak naturally in **Hindi, Marathi, or English**.
+- **Auto-Language Detection**: The AI replies in your spoken language.
+- **Hands-Free Mode**: Perfect for use in the field.
+- **Interactive**: Listens, thinks, and speaks back with farming advice.
 
-### Farmers talk. Apps should listen.
-Most Indian farmers are:
-- Semi-literate or illiterate
-- Comfortable with voice, not text
-- Using low-end Android phones
-- Distrustful of complex apps
+### í·  Intelligent Tools (Auto-Detected Intents)
+The AI automatically understands your intent and calls the right tool:
 
-So KrushiAI is built with:
-- **Voice-first interaction**
-- **Minimal text**
-- **Large icons**
-- **Local languages**
-- **Trust-driven UX**
+1.  **í¼¿ Crop Assistance**: Guidance on planting, fertilizers, and pest management.
+2.  **í´ Disease Detection**: 
+    - Upload photos of affected crops.
+    - AI analyzes symptoms and suggests chemical/organic remedies.
+3.  **í³‹ Scheme Finder**: Finds government subsidies (PM-KISAN, etc.) matching your profile.
+4.  **í²° Sell Produce**: 
+    - List your harvest for sale directly from the chat.
+    - Connects with local buyers.
+5.  **â›… Weather Advisory**: Real-time forecasts + farming activity recommendations (e.g., "Is it safe to spray today?").
+6.  **í³Š Market Prices**: Live mandi rates (APMC) for your crops.
+7.  **í·ª Soil Analysis**: Upload soil reports or describe soil conditions for fertilizer advice.
+8.  **í´ Find Buyers**: Locate active buyers for your specific crop.
 
----
+### í³± User Experience
+- **Floating Chat Widget**: Accessible anywhere in the app.
+- **Offline Support**: PWA capabilities (coming soon).
+- **Localized UI**: All buttons and text available in regional languages.
 
-## ğŸ¯ What Problem Are We Solving?
+## í» ï¸ Tech Stack
 
-### 1. Crop & Disease Confusion
-Farmers:
-- Canâ€™t identify diseases early
-- Get conflicting advice
-- Lose yield & money
+- **Framework**: [Next.js 16](https://nextjs.org/) (App Router)
+- **AI Engine**: [Vercel AI SDK](https://sdk.vercel.ai/docs) + Google Gemini 2.5 Flash
+- **Database**: PostgreSQL + Prisma ORM
+- **Styling**: Tailwind CSS + Shadcn UI
+- **Auth**: NextAuth.js (Phone/OTP)
+- **Maps**: OpenStreetMap / Google Maps (optional)
+- **Voice**: Web Speech API (Speech Recognition & Synthesis)
 
-### 2. Market Access
-Farmers:
-- Depend on middlemen
-- Donâ€™t know real demand or prices
-- Sell below market value
+## âš¡ Getting Started
 
-### 3. Information Overload
-Government & private schemes exist, but:
-- Eligibility is unclear
-- Forms are complex
-- Language is a barrier
+### Prerequisites
+- Node.js 18+ 
+- PostgreSQL database
+- Google AI Studio API Key
 
----
+### Installation
 
-## ğŸš€ MVP Scope (Current Focus)
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/your-username/farmer-helper.git
+    cd farmer-helper
+    ```
 
-We are **NOT building everything at once**.
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    # or
+    pnpm install
+    ```
 
-### âœ… MVP User Journey
+3.  **Set up Environment Variables:**
+    Copy `.env.example` to `.env` and fill in your keys:
+    ```bash
+    cp .env.example .env
+    ```
+    
+    Required variables:
+    - `DATABASE_URL`: Your Postgres connection string.
+    - `AUTH_SECRET`: Generate with `openssl rand -base64 32`.
+    - `GOOGLE_GENERATIVE_AI_API_KEY`: Get from [Google AI Studio](https://aistudio.google.com/).
 
-Onboarding
-â†“
-AI Chat (Voice + Image)
-â†“
-Marketplace (Buyers â†” Farmers)
+4.  **Initialize Database:**
+    ```bash
+    npx prisma generate
+    npx prisma db push
+    ```
 
+5.  **Run Development Server:**
+    ```bash
+    npm run dev
+    ```
 
+6.  **Open in Browser:**
+    Visit `http://localhost:3000`.
 
-This MVP validates:
-- Trust in AI
-- Voice usability
-- Image-based crop help
-- Willingness to sell/buy via app
+## í´ Contributing
 
----
+Contributions are welcome! Please open an issue or submit a pull request.
 
-## ğŸ§© Features (MVP)
+## í³„ License
 
-### 1ï¸âƒ£ Onboarding
-- Language selection (Marathi / Hindi / English)
-- Voice instructions
-- Microphone & camera permissions
-- No forced login
-
----
-
-### 2ï¸âƒ£ AI Assistant (Core Feature)
-
-**Primary Interface**
-- WhatsApp-style chat UI
-- Large floating microphone button
-- Voice waveform animation
-- Image upload (crop photo)
-
-**Capabilities**
-- Farmer speaks â†’ AI understands intent
-- Farmer uploads crop image â†’ AI gives guidance
-- AI responds in:
-  - Text (minimal)
-  - Voice (important)
-  - Visual cards (actions)
-
-**Examples**
-- â€œà¤®à¤¾à¤à¥à¤¯à¤¾ à¤ªà¤¿à¤•à¤¾à¤µà¤° à¤¡à¤¾à¤— à¤†à¤²à¥‡à¤¤â€
-- â€œThis leaf is turning yellowâ€
-- Upload photo of crop disease
-
----
-
-### 3ï¸âƒ£ Marketplace (Hybrid Access)
-
-#### Without Login
-- Browse crops for sale
-- Browse buyer requirements
-- View approximate location & price
-
-#### With Login
-- Post crop listings
-- Post buyer requirements
-- Contact via call/chat
-- Build trust score over time
-
-**Why hybrid?**
-- Zero friction discovery
-- Authentication only when money/contact is involved
-
----
-
-## ğŸ—£ï¸ Languages & Localization
-
-### Supported
-- Marathi (default)
-- Hindi
-- English
-
-### Important Note
-Language switching is **not just translation**:
-- Crop names change
-- Terminology changes
-- Scheme names change
-- Tone changes
-
-AI responses must adapt culturally.
-
----
-
-## ğŸ™ï¸ Voice-First UX Rules
-
-Every major screen must have:
-- ğŸ¤ Voice input button
-- ğŸ”Š Speak / read aloud button
-- Minimal text
-- Large touch targets
-
-Text is secondary.  
-Voice is primary.
-
----
-
-## ğŸ§± Tech Stack (Frontend)
-
-- **Next.js (App Router)**
-- **TypeScript**
-- **Tailwind CSS**
-- **shadcn/ui**
-- Mobile-first responsive design
-- Dark / Light mode
-- Accessibility-focused
-
----
-
-## ğŸ“± Responsive Design Rules
-
-### Mobile (Primary)
-- Bottom navigation
-- Floating mic button
-- Single-column layout
-
-### Tablet
-- Card grids
-- Context panels
-
-### Desktop
-- Sidebar navigation
-- Dashboard layout (for buyers/admins)
-
----
-
-## ğŸ§© Key UI Components
-
-- `FloatingMicButton`
-- `VoiceWaveform`
-- `AIChatBubble`
-- `ImageUploadCard`
-- `CropAdviceCard`
-- `MarketplaceListingCard`
-- `LanguageSwitcher`
-- `BottomNav`
-- `SidebarNav`
-
----
-
-## ğŸ¤– AI Interaction Model (Important)
-
-### âŒ What we do NOT do
-- No raw prompt writing by farmers
-- No exposing AI internals
-
-### âœ… What we do
-- Voice / text â†’ intent detection
-- Intent â†’ UI actions
-- AI guides user step-by-step
-
-**Example**
-User says:
-> â€œI want to sell wheatâ€
-
-Internally becomes:
-```json
-{
-  "intent": "sell_crop",
-  "crop": "wheat"
-}
+This project is licensed under the MIT License.

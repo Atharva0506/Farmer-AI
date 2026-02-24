@@ -16,7 +16,7 @@ dist/
 # Environment variables
 .env
 .env*.local
-.env.local
+.env.localcl
 .env.development.local
 .env.test.local
 .env.production.local
@@ -56,3 +56,6 @@ lerna-debug.log*
 # Misc
 *.pem
 .cache/
+.github/prompts/
+.github/prompts/*.prompt.md
+temp_readme_content.md
