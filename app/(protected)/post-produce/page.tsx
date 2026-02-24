@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import {
   Sprout,
   Scale,
@@ -11,11 +11,14 @@ import {
   ArrowLeft,
   CheckCircle,
   Mic,
+  Loader2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { useLanguage } from "@/lib/language-context"
 import { cn } from "@/lib/utils"
+import { useGeolocation } from "@/hooks/use-geolocation"
+import { toast } from "sonner"
 
 const crops = [
   { name: "Tomato", nameLocal: "टमाटर" },
@@ -36,12 +39,64 @@ export default function PostProducePage() {
   const [selectedQuantity, setSelectedQuantity] = useState("")
   const [price, setPrice] = useState("")
   const [submitted, setSubmitted] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
   const { t } = useLanguage()
+  const { latitude, longitude } = useGeolocation()
 
   const totalSteps = 4
 
-  const handleSubmit = () => {
-    setSubmitted(true)
+  // Parse quantity into number + unit
+  const parseQuantity = useCallback((q: string) => {
+    const match = q.match(/^([\d,]+)\s*(.+)$/)
+    if (!match) return { value: q, unit: "kg" }
+    return { value: match[1].replace(",", ""), unit: match[2].trim() }
+  }, [])
+
+  // Parse price string to number
+  const parsePrice = useCallback((p: string) => {
+    const num = p.replace(/[^\d.]/g, "")
+    return parseFloat(num) || 0
+  }, [])
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true)
+    try {
+      const parsed = parseQuantity(selectedQuantity)
+      const priceNum = parsePrice(price)
+
+      const body: Record<string, any> = {
+        cropName: selectedCrop,
+        quantity: parsed.value,
+        unit: parsed.unit,
+        pricePerUnit: priceNum,
+      }
+
+      if (latitude !== null && longitude !== null) {
+        body.location = { lat: latitude, lng: longitude }
+      }
+
+      // TODO: Upload image to cloud storage and pass URL
+      // For now, we skip imageUrl if no upload service is configured
+
+      const res = await fetch("/api/marketplace", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      })
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || "Failed to post listing")
+      }
+
+      setSubmitted(true)
+    } catch (err: any) {
+      toast.error(err.message || "Failed to post listing. Please try again.")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   if (submitted) {
@@ -84,6 +139,8 @@ export default function PostProducePage() {
               setSelectedCrop("")
               setSelectedQuantity("")
               setPrice("")
+              setImageFile(null)
+              setImagePreview(null)
             }}
             className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
@@ -197,7 +254,9 @@ export default function PostProducePage() {
               <h2 className="text-lg font-bold text-foreground">{t("location")}</h2>
             </div>
             <div className="rounded-xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground">
-              Auto-detected: Nashik, Maharashtra
+              {latitude !== null && longitude !== null
+                ? `📍 ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
+                : "Detecting location..."}
             </div>
           </div>
         </div>
@@ -219,14 +278,27 @@ export default function PostProducePage() {
                 {selectedQuantity ? `Photo of ${selectedCrop} (${selectedQuantity})` : "Take or upload a photo of your produce"}
               </p>
 
+              {imagePreview && (
+                <img
+                  src={imagePreview}
+                  alt="Preview"
+                  className="w-full max-h-40 object-cover rounded-lg"
+                  onLoad={() => URL.revokeObjectURL(imagePreview)}
+                />
+              )}
+
               <input
                 id="produce-file-upload"
                 type="file"
                 className="hidden"
                 accept="image/*"
                 onChange={(e) => {
-                  if (e.target.files?.[0]) {
-                    alert(`Selected: ${e.target.files[0].name}`) // Mock for now, in real app set state
+                  const file = e.target.files?.[0]
+                  if (file) {
+                    setImageFile(file)
+                    const url = URL.createObjectURL(file)
+                    setImagePreview(url)
+                    toast.success(`Selected: ${file.name}`)
                   }
                 }}
               />
@@ -265,10 +337,12 @@ export default function PostProducePage() {
             else handleSubmit()
           }}
           className="flex-1 h-14 bg-primary text-primary-foreground hover:bg-primary/90"
-          disabled={step === 0 && !selectedCrop}
+          disabled={(step === 0 && !selectedCrop) || isSubmitting}
         >
-          {step === totalSteps - 1 ? t("submit") : t("next")}
-          {step < totalSteps - 1 && <ArrowRight size={18} className="ml-2" />}
+          {isSubmitting ? (
+            <><Loader2 size={18} className="mr-2 animate-spin" /> Posting...</>
+          ) : step === totalSteps - 1 ? t("submit") : t("next")}
+          {!isSubmitting && step < totalSteps - 1 && <ArrowRight size={18} className="ml-2" />}
         </Button>
       </div>
     </div>

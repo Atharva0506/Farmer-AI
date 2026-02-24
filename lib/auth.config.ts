@@ -2,7 +2,7 @@ import type { NextAuthConfig } from 'next-auth';
 
 export const authConfig = {
     pages: {
-        signIn: '/auth/login', // Redirect to login if not authenticated
+        signIn: '/auth/phone', // Redirect to phone login if not authenticated
     },
     providers: [], // Configured in auth.ts
     callbacks: {

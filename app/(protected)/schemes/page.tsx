@@ -4,6 +4,8 @@ import { useState, useRef, useEffect, useCallback } from "react"
 import { Search, MessageCircle, ArrowRight, Loader2, Send, Bot, Sparkles, ExternalLink, FileCheck, ChevronDown, ChevronUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
 
 import { useLanguage } from "@/lib/language-context"
 import { cn } from "@/lib/utils"
@@ -383,8 +385,8 @@ export default function SchemesPage() {
               </div>
 
               {aiAnswer && (
-                <div className="bg-muted/50 rounded-xl p-3 mb-3 text-sm text-foreground whitespace-pre-wrap leading-relaxed">
-                  {aiAnswer}
+                <div className="bg-muted/50 rounded-xl p-3 mb-3 text-sm text-foreground leading-relaxed prose prose-sm dark:prose-invert max-w-none">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{aiAnswer}</ReactMarkdown>
                 </div>
               )}
 

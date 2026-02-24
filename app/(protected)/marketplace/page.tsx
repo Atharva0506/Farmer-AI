@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { Loader2 } from "lucide-react"
 import { MarketplaceCard } from "@/components/features/market/marketplace-card"
 import { MarketplaceFilters } from "@/components/features/market/marketplace-filters"
 import { useLanguage } from "@/lib/language-context"
@@ -8,90 +9,16 @@ import { useLanguage } from "@/lib/language-context"
 interface Listing {
   id: string
   cropName: string
-  cropNameLocal: string
+  cropNameLocal?: string
   quantity: string
-  price: string
-  location: string
-  distance: string
-  farmerName: string
-  imageUrl: string
-  category: string
+  unit: string
+  pricePerUnit: number
+  location: string | null
+  imageUrl: string | null
+  description: string | null
+  status: string
+  user: { id: string; name: string | null; phone: string | null; location: string | null }
 }
-
-const listings: Listing[] = [
-  {
-    id: "1",
-    cropName: "Tomato",
-    cropNameLocal: "टमाटर",
-    quantity: "500 kg",
-    price: "Rs 28/kg",
-    location: "Nashik",
-    distance: "15 km",
-    farmerName: "Ramesh Patil",
-    imageUrl: "https://images.unsplash.com/photo-1546470427-0d4db154ceb8?w=400&h=300&fit=crop",
-    category: "vegetables",
-  },
-  {
-    id: "2",
-    cropName: "Onion",
-    cropNameLocal: "कांदा",
-    quantity: "1000 kg",
-    price: "Rs 20/kg",
-    location: "Pune",
-    distance: "25 km",
-    farmerName: "Suresh More",
-    imageUrl: "https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?w=400&h=300&fit=crop",
-    category: "vegetables",
-  },
-  {
-    id: "3",
-    cropName: "Wheat",
-    cropNameLocal: "गहू",
-    quantity: "20 quintal",
-    price: "Rs 2,200/q",
-    location: "Solapur",
-    distance: "40 km",
-    farmerName: "Ganesh Jadhav",
-    imageUrl: "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=400&h=300&fit=crop",
-    category: "grains",
-  },
-  {
-    id: "4",
-    cropName: "Grapes",
-    cropNameLocal: "द्राक्षे",
-    quantity: "200 kg",
-    price: "Rs 60/kg",
-    location: "Sangli",
-    distance: "30 km",
-    farmerName: "Prakash Kulkarni",
-    imageUrl: "https://images.unsplash.com/photo-1537640538966-79f369143f8f?w=400&h=300&fit=crop",
-    category: "fruits",
-  },
-  {
-    id: "5",
-    cropName: "Sugarcane",
-    cropNameLocal: "ऊस",
-    quantity: "50 ton",
-    price: "Rs 3,500/ton",
-    location: "Kolhapur",
-    distance: "55 km",
-    farmerName: "Vijay Shinde",
-    imageUrl: "https://images.unsplash.com/photo-1558642452-9d2a7deb7f62?w=400&h=300&fit=crop",
-    category: "cash_crops",
-  },
-  {
-    id: "6",
-    cropName: "Soybean",
-    cropNameLocal: "सोयाबीन",
-    quantity: "15 quintal",
-    price: "Rs 4,800/q",
-    location: "Latur",
-    distance: "70 km",
-    farmerName: "Balaji Deshmukh",
-    imageUrl: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400&h=300&fit=crop",
-    category: "grains",
-  },
-]
 
 const categories = [
   { key: "all", label: "All Crops", labelKey: "allCrops" },
@@ -101,22 +28,47 @@ const categories = [
   { key: "cash_crops", label: "Cash Crops" },
 ]
 
+// Map crop names to categories for filtering
+const cropCategoryMap: Record<string, string> = {
+  tomato: "vegetables", onion: "vegetables", potato: "vegetables",
+  wheat: "grains", rice: "grains", soybean: "grains", bajra: "grains", jowar: "grains",
+  grapes: "fruits", banana: "fruits", mango: "fruits", pomegranate: "fruits", orange: "fruits",
+  sugarcane: "cash_crops", cotton: "cash_crops", turmeric: "cash_crops",
+}
+
 export default function MarketplacePage() {
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [searchQuery, setSearchQuery] = useState("")
   const [maxDistance, setMaxDistance] = useState(100)
+  const [listings, setListings] = useState<Listing[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const { t } = useLanguage()
 
-  const filteredListings = listings.filter((l) => {
-    const matchesCategory = selectedCategory === "all" || l.category === selectedCategory
-    const matchesSearch =
-      !searchQuery ||
-      l.cropName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      l.cropNameLocal.includes(searchQuery)
-    const distanceVal = parseInt(l.distance)
-    const matchesDistance = distanceVal <= maxDistance
+  useEffect(() => {
+    async function fetchListings() {
+      setIsLoading(true)
+      setError(null)
+      try {
+        const res = await fetch("/api/marketplace")
+        if (!res.ok) throw new Error("Failed to load listings")
+        const data = await res.json()
+        setListings(data.listings || [])
+      } catch (err: any) {
+        setError(err.message)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchListings()
+  }, [])
 
-    return matchesCategory && matchesSearch && matchesDistance
+  const filteredListings = listings.filter((l) => {
+    const category = cropCategoryMap[l.cropName.toLowerCase()] || "other"
+    const matchesCategory = selectedCategory === "all" || category === selectedCategory
+    const matchesSearch =
+      !searchQuery || l.cropName.toLowerCase().includes(searchQuery.toLowerCase())
+    return matchesCategory && matchesSearch
   })
 
   return (
@@ -138,11 +90,25 @@ export default function MarketplacePage() {
 
       {/* Listings Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-        {filteredListings.length > 0 ? (
+        {isLoading ? (
+          <div className="col-span-full flex justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : error ? (
+          <div className="col-span-full text-center py-12 text-destructive">
+            {error}
+          </div>
+        ) : filteredListings.length > 0 ? (
           filteredListings.map((listing) => (
             <MarketplaceCard
               key={listing.id}
-              {...listing}
+              cropName={listing.cropName}
+              quantity={`${listing.quantity} ${listing.unit}`}
+              price={`₹${listing.pricePerUnit}/${listing.unit}`}
+              location={listing.user?.location || "Unknown"}
+              distance=""
+              imageUrl={listing.imageUrl || "/placeholder.svg"}
+              farmerName={listing.user?.name || "Anonymous"}
             />
           ))
         ) : (

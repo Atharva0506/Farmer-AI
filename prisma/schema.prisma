@@ -31,6 +31,7 @@ model User {
   accounts      Account[]
   sessions      Session[]
   chats         Chat[]
+  listings      Listing[]
 }
 
 model Account {
@@ -87,4 +88,60 @@ model Message {
   createdAt DateTime @default(now())
 
   chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+}
+
+// ─── Caching ────────────────────────────────
+model CachedResponse {
+  id        String   @id @default(cuid())
+  cacheKey  String   @unique
+  response  String   @db.Text // JSON stringified
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([cacheKey])
+  @@index([expiresAt])
+}
+
+// ─── API Usage Logging ──────────────────────
+model ApiUsageLog {
+  id               String   @id @default(cuid())
+  route            String
+  promptTokens     Int      @default(0)
+  completionTokens Int      @default(0)
+  totalTokens      Int      @default(0)
+  model            String   @default("gemini-2.5-flash")
+  cached           Boolean  @default(false)
+  durationMs       Int      @default(0)
+  createdAt        DateTime @default(now())
+
+  @@index([route])
+  @@index([createdAt])
+}
+
+// ─── Marketplace Listings ───────────────────
+enum ListingStatus {
+  ACTIVE
+  SOLD
+  EXPIRED
+}
+
+model Listing {
+  id           String        @id @default(cuid())
+  userId       String
+  cropName     String
+  quantity     String
+  unit         String        @default("kg")
+  pricePerUnit Float
+  location     String?       // JSON string "{lat, lng, address}"
+  imageUrl     String?
+  description  String?
+  status       ListingStatus @default(ACTIVE)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([cropName])
+  @@index([userId])
 }

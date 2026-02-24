@@ -5,6 +5,8 @@ import { AppHeader } from "./app-header"
 import { BottomNav } from "./bottom-nav"
 import { SidebarNav } from "./sidebar-nav"
 import { DesktopHeader } from "./desktop-header"
+import { ErrorBoundary } from "@/components/error-boundary"
+import { FloatingChatWidget } from "@/components/features/assistant/floating-chat-widget"
 import { useState } from "react"
 import type { ReactNode } from "react"
 import { cn } from "@/lib/utils"
@@ -36,9 +38,12 @@ export function AppShell({ children, userRole }: { children: ReactNode; userRole
             >
                 <AppHeader />
                 <DesktopHeader />
-                <main className="flex-1 pb-20 md:pb-0">{children}</main>
+                <main className="flex-1 pb-20 md:pb-0">
+                    <ErrorBoundary>{children}</ErrorBoundary>
+                </main>
             </div>
             <BottomNav />
+            <FloatingChatWidget />
         </div>
     )
 }

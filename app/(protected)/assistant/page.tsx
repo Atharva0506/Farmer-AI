@@ -1,34 +1,49 @@
 "use client"
 
-import { useState, useRef, useEffect, useCallback } from "react"
+import { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import { Sprout } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { AIChatBubble } from "@/components/features/assistant/ai-chat-bubble"
-import { ChatInput, ActiveTool } from "@/components/features/assistant/chat-input"
+import { ChatInput } from "@/components/features/assistant/chat-input"
 import { useLanguage } from "@/lib/language-context"
+import { useGeolocation } from "@/hooks/use-geolocation"
 import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai"
 import type { UIMessage, FileUIPart } from "ai"
+import { toast } from "sonner"
 
 export default function AssistantPage() {
-  const [mode, setMode] = useState<"think" | "research">("think")
-  const [activeTool, setActiveTool] = useState<ActiveTool>(null)
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [input, setInput] = useState("")
+  const [speakingMsgId, setSpeakingMsgId] = useState<string | null>(null)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const router = useRouter()
   const { t, language } = useLanguage()
+  const { latitude, longitude } = useGeolocation()
+
+  // ─── FIX: Recreate transport when language changes ──
+  // Also passes geolocation for real weather + location-aware tool backends
+  const transport = useMemo(
+    () =>
+      new DefaultChatTransport({
+        api: "/api/chat",
+        body: { data: { language, latitude, longitude } },
+      }),
+    [language, latitude, longitude]
+  )
 
   const { messages, sendMessage, status, stop } = useChat({
-    transport: new DefaultChatTransport({
-      api: "/api/chat",
-      body: { data: { mode, activeTool, language } },
-    }),
-    onError: (error) => console.error("Chat error:", error),
+    transport,
+    onError: (error) => {
+      console.error("Chat error:", error)
+      toast.error(t("chatError") || "Something went wrong. Please try again.")
+    },
   })
 
   const isLoading = status === "streaming" || status === "submitted"
 
-  // Helper to extract text from UIMessage parts
+  // ─── Extract text from UIMessage parts ──────────────
   const getMessageText = useCallback((msg: UIMessage): string => {
     if (!msg.parts) return ""
     return msg.parts
@@ -37,7 +52,7 @@ export default function AssistantPage() {
       .join("")
   }, [])
 
-  // Helper to extract images from UIMessage
+  // ─── Extract images from UIMessage ──────────────
   const getMessageImages = useCallback((msg: UIMessage): string[] => {
     if (!msg.parts) return []
     return msg.parts
@@ -46,11 +61,28 @@ export default function AssistantPage() {
       .filter(Boolean)
   }, [])
 
+  // ─── Handle navigation tool calls from AI ──────────
+  useEffect(() => {
+    if (messages.length === 0) return
+    const lastMsg = messages[messages.length - 1]
+    if (lastMsg.role !== "assistant" || !lastMsg.parts) return
+
+    for (const part of lastMsg.parts) {
+      if (part.type === "tool-invocation" && (part as any).toolName === "navigate") {
+        const result = (part as any).result
+        if (result?.action === "navigate" && result?.route) {
+          setTimeout(() => router.push(result.route), 500)
+        }
+      }
+    }
+  }, [messages, router])
+
+  // ─── Auto-scroll ──────────────
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
 
-  // Convert File to data URL
+  // ─── File → Data URL ──────────────
   const fileToDataUrl = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader()
@@ -59,6 +91,78 @@ export default function AssistantPage() {
       reader.readAsDataURL(file)
     })
   }
+
+  // ─── Client-side image compression ──────────────
+  const compressImage = (file: File, maxDim: number = 1024): Promise<File> => {
+    return new Promise((resolve) => {
+      if (file.size < 500 * 1024) {
+        resolve(file) // Skip if <500KB
+        return
+      }
+      const img = new Image()
+      const url = URL.createObjectURL(file)
+      img.onload = () => {
+        URL.revokeObjectURL(url)
+        const canvas = document.createElement("canvas")
+        let { width, height } = img
+        if (width > maxDim || height > maxDim) {
+          const ratio = Math.min(maxDim / width, maxDim / height)
+          width = Math.round(width * ratio)
+          height = Math.round(height * ratio)
+        }
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext("2d")!
+        ctx.drawImage(img, 0, 0, width, height)
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              resolve(new File([blob], file.name, { type: "image/jpeg" }))
+            } else {
+              resolve(file)
+            }
+          },
+          "image/jpeg",
+          0.8
+        )
+      }
+      img.onerror = () => {
+        URL.revokeObjectURL(url)
+        resolve(file)
+      }
+      img.src = url
+    })
+  }
+
+  // ─── TTS: speak a message ──────────────
+  const handleSpeak = useCallback(
+    (text: string, msgId: string) => {
+      if (speakingMsgId === msgId) {
+        window.speechSynthesis.cancel()
+        setSpeakingMsgId(null)
+        return
+      }
+      window.speechSynthesis.cancel()
+      // Strip markdown for cleaner TTS
+      const clean = text
+        .replace(/[#*_~`>|[\]()-]/g, "")
+        .replace(/\n+/g, ". ")
+        .trim()
+      const utterance = new SpeechSynthesisUtterance(clean)
+      const langVoiceMap: Record<string, string> = {
+        mr: "mr-IN",
+        hi: "hi-IN",
+        en: "en-US",
+      }
+      utterance.lang = langVoiceMap[language] || "en-US"
+      utterance.rate = 0.9
+      utterance.onend = () => setSpeakingMsgId(null)
+      utterance.onerror = () => setSpeakingMsgId(null)
+      setSpeakingMsgId(msgId)
+      window.speechSynthesis.speak(utterance)
+    },
+    [language, speakingMsgId]
+  )
 
   // ─── SEND MESSAGE ──────────────────────────
   const handleSendMessage = async (e?: React.FormEvent) => {
@@ -71,9 +175,14 @@ export default function AssistantPage() {
     setSelectedFiles([])
 
     if (currentFiles.length > 0) {
-      // Convert to FileUIPart[] for the v3 API
+      // Compress images client-side before sending
+      const compressedFiles = await Promise.all(
+        currentFiles.map((f) =>
+          f.type.startsWith("image/") ? compressImage(f) : Promise.resolve(f)
+        )
+      )
       const fileParts: FileUIPart[] = await Promise.all(
-        currentFiles.map(async (file) => ({
+        compressedFiles.map(async (file) => ({
           type: "file" as const,
           mediaType: file.type,
           filename: file.name,
@@ -90,25 +199,24 @@ export default function AssistantPage() {
     }
   }
 
-  // ─── Quick prompt suggestion cards ──────────────────────────
+  // ─── Quick prompt Cards ──────────────────────────
   const quickPrompts = [
-    { text: t("quickCrop"), icon: "🌾", tool: 'crop-help' as ActiveTool },
-    { text: t("quickDisease"), icon: "🔍", tool: 'disease-detect' as ActiveTool },
-    { text: t("quickScheme"), icon: "📋", tool: 'gov-schemes' as ActiveTool },
-    { text: t("quickSell"), icon: "💰", tool: 'sell-produce' as ActiveTool },
-    { text: t("quickWeather"), icon: "🌤️", tool: 'weather' as ActiveTool },
-    { text: t("quickSoil"), icon: "🧪", tool: 'soil-analysis' as ActiveTool },
+    { text: t("quickCrop"), icon: "🌾" },
+    { text: t("quickDisease"), icon: "🔍" },
+    { text: t("quickScheme"), icon: "📋" },
+    { text: t("quickSell"), icon: "💰" },
+    { text: t("quickWeather"), icon: "☀️" },
+    { text: t("quickSoil"), icon: "🧪" },
   ]
 
   // ─── MAIN UI ──────────────────────────
   return (
-    <div className="flex flex-col h-full overflow-hidden bg-background relative">
+    <div className="flex flex-col h-[calc(100vh-4rem)] md:h-screen overflow-hidden bg-background relative">
       {/* Messages */}
       <div className="flex-1 overflow-y-auto w-full no-scrollbar pb-2 relative">
         <div className="flex flex-col gap-6 px-4 py-6 max-w-3xl mx-auto min-h-full">
           {messages.length === 0 && (
             <div className="flex flex-col items-center justify-center flex-1 h-full text-center text-muted-foreground mt-16">
-              {/* Hero Icon */}
               <div className="relative mb-6">
                 <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center shadow-lg">
                   <Sprout size={40} className="text-primary" />
@@ -118,23 +226,28 @@ export default function AssistantPage() {
                 </div>
               </div>
 
-              <h2 className="text-xl font-bold text-foreground mb-1">{t("appName")}</h2>
-              <p className="text-sm text-muted-foreground mb-8 max-w-sm">{t("assistantWelcome")}</p>
+              <h2 className="text-xl font-bold text-foreground mb-1">
+                KrishiMitra AI
+              </h2>
+              <p className="text-xs text-primary/70 font-medium mb-1">कृषि मित्र</p>
+              <p className="text-sm text-muted-foreground mb-8 max-w-sm">
+                {t("assistantWelcome")}
+              </p>
 
-              {/* Quick Prompts Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-w-lg w-full">
                 {quickPrompts.map((p) => (
                   <button
                     key={p.text}
                     onClick={() => {
-                      setActiveTool(p.tool)
                       setInput(p.text)
                     }}
                     className="group px-3 py-3 text-xs rounded-2xl border border-border bg-card text-foreground
                                hover:border-primary/50 hover:bg-primary/5 hover:shadow-md
                                transition-all duration-200 flex flex-col items-center gap-2 text-center"
                   >
-                    <span className="text-2xl group-hover:scale-110 transition-transform">{p.icon}</span>
+                    <span className="text-2xl group-hover:scale-110 transition-transform">
+                      {p.icon}
+                    </span>
                     <span className="line-clamp-2 leading-tight">{p.text}</span>
                   </button>
                 ))}
@@ -143,13 +256,20 @@ export default function AssistantPage() {
           )}
 
           {messages.map((msg) => {
+            const text = getMessageText(msg)
             const images = getMessageImages(msg)
             return (
               <AIChatBubble
                 key={msg.id}
-                message={getMessageText(msg)}
+                message={text}
                 isAI={msg.role === "assistant"}
                 images={images}
+                isSpeaking={speakingMsgId === msg.id}
+                onSpeak={
+                  msg.role === "assistant" && text
+                    ? () => handleSpeak(text, msg.id)
+                    : undefined
+                }
               />
             )
           })}
@@ -162,7 +282,7 @@ export default function AssistantPage() {
                 <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce" />
               </div>
               <span className="text-xs text-muted-foreground font-medium">
-                {activeTool ? t('toolProcessing') : t("thinking")}...
+                {t("thinking")}...
               </span>
             </div>
           )}
@@ -171,21 +291,21 @@ export default function AssistantPage() {
       </div>
 
       {/* Input Area */}
-      <div className="shrink-0 p-4 pb-4 md:pb-6 bg-background/80 backdrop-blur-md border-t border-border z-20">
+      <div className="shrink-0 p-4 pb-20 md:pb-6 bg-background/80 backdrop-blur-md border-t border-border z-20">
         <ChatInput
           input={input}
           setInput={setInput}
           isLoading={isLoading}
           onSubmit={handleSendMessage}
-          onFilesSelect={(files) => setSelectedFiles((prev) => [...prev, ...files])}
-          onClearFile={(index) => setSelectedFiles((prev) => prev.filter((_, i) => i !== index))}
+          onFilesSelect={(files) =>
+            setSelectedFiles((prev) => [...prev, ...files])
+          }
+          onClearFile={(index) =>
+            setSelectedFiles((prev) => prev.filter((_, i) => i !== index))
+          }
           onClearAllFiles={() => setSelectedFiles([])}
           selectedFiles={selectedFiles}
           stop={stop}
-          mode={mode}
-          setMode={setMode}
-          activeTool={activeTool}
-          setActiveTool={setActiveTool}
         />
       </div>
     </div>
