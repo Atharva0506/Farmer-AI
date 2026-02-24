@@ -4,36 +4,36 @@ KrishiMitra is an advanced, voice-first AI assistant designed to empower Indian 
 
 ![KrishiMitra AI](https://placehold.co/1200x600?text=KrishiMitra+AI+Dashboard)
 
-## íº€ Key Features
+## ï¿½ï¿½ï¿½ Key Features
 
-### í¾™ï¸ Conversational Voice AI
+### ï¿½ï¿½ï¿½ï¸ Conversational Voice AI
 - **Voice-First Interface**: Speak naturally in **Hindi, Marathi, or English**.
 - **Auto-Language Detection**: The AI replies in your spoken language.
 - **Hands-Free Mode**: Perfect for use in the field.
 - **Interactive**: Listens, thinks, and speaks back with farming advice.
 
-### í·  Intelligent Tools (Auto-Detected Intents)
+### ï¿½ï¿½ï¿½ Intelligent Tools (Auto-Detected Intents)
 The AI automatically understands your intent and calls the right tool:
 
-1.  **í¼¿ Crop Assistance**: Guidance on planting, fertilizers, and pest management.
-2.  **í´ Disease Detection**: 
+1.  **ï¿½ï¿½ï¿½ Crop Assistance**: Guidance on planting, fertilizers, and pest management.
+2.  **ï¿½ï¿½ï¿½ Disease Detection**: 
     - Upload photos of affected crops.
     - AI analyzes symptoms and suggests chemical/organic remedies.
-3.  **í³‹ Scheme Finder**: Finds government subsidies (PM-KISAN, etc.) matching your profile.
-4.  **í²° Sell Produce**: 
+3.  **ï¿½ï¿½ï¿½ Scheme Finder**: Finds government subsidies (PM-KISAN, etc.) matching your profile.
+4.  **ï¿½ï¿½ï¿½ Sell Produce**: 
     - List your harvest for sale directly from the chat.
     - Connects with local buyers.
 5.  **â›… Weather Advisory**: Real-time forecasts + farming activity recommendations (e.g., "Is it safe to spray today?").
-6.  **í³Š Market Prices**: Live mandi rates (APMC) for your crops.
-7.  **í·ª Soil Analysis**: Upload soil reports or describe soil conditions for fertilizer advice.
-8.  **í´ Find Buyers**: Locate active buyers for your specific crop.
+6.  **ï¿½ï¿½ï¿½ Market Prices**: Live mandi rates (APMC) for your crops.
+7.  **ï¿½ï¿½ï¿½ Soil Analysis**: Upload soil reports or describe soil conditions for fertilizer advice.
+8.  **ï¿½ï¿½ï¿½ Find Buyers**: Locate active buyers for your specific crop.
 
-### í³± User Experience
+### ï¿½ï¿½ï¿½ User Experience
 - **Floating Chat Widget**: Accessible anywhere in the app.
 - **Offline Support**: PWA capabilities (coming soon).
 - **Localized UI**: All buttons and text available in regional languages.
 
-## í» ï¸ Tech Stack
+## ï¿½ï¿½ï¿½ï¸ Tech Stack
 
 - **Framework**: [Next.js 16](https://nextjs.org/) (App Router)
 - **AI Engine**: [Vercel AI SDK](https://sdk.vercel.ai/docs) + Google Gemini 2.5 Flash
@@ -90,10 +90,10 @@ The AI automatically understands your intent and calls the right tool:
 6.  **Open in Browser:**
     Visit `http://localhost:3000`.
 
-## í´ Contributing
+## ï¿½ï¿½ï¿½ Contributing
 
 Contributions are welcome! Please open an issue or submit a pull request.
 
-## í³„ License
+## ï¿½ï¿½ï¿½ License
 
 This project is licensed under the MIT License.
