@@ -81,6 +81,14 @@ export function ChatInput({
             recognitionRef.current.onerror = (event: any) => {
                 console.error("Speech recognition error", event.error)
                 setIsListening(false)
+
+                if (event.error === 'network') {
+                    toast.error(t('speechNetworkError') || "Speech recognition failed due to a network error. Please check your connection or browser settings.")
+                } else if (event.error === 'not-allowed') {
+                    toast.error(t('speechNotAllowedError') || "Microphone access denied. Please allow microphone permissions.")
+                } else {
+                    toast.error(t('speechError') || "Speech recognition encountered an error: " + event.error)
+                }
             }
 
             recognitionRef.current.onend = () => setIsListening(false)

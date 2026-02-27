@@ -10,6 +10,7 @@ import { DefaultChatTransport } from "ai"
 import type { UIMessage, FileUIPart } from "ai"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { toast } from "sonner"
 
 // ─── Voice states ───────────────
 type VoiceState = "idle" | "listening" | "thinking" | "speaking" | "error"
@@ -345,6 +346,12 @@ export function VoiceChatModal({ isOpen, onClose }: VoiceChatModalProps) {
           setTimeout(() => startListening(), 1000)
         }
       } else {
+        if (event.error === 'network') {
+          toast.error(t('speechNetworkError') || "Speech recognition failed due to a network error. Please check your connection.")
+        } else if (event.error === 'not-allowed') {
+          toast.error(t('speechNotAllowedError') || "Microphone access denied.")
+        }
+
         setVoiceState("error")
         setTimeout(() => setVoiceState("idle"), 2000)
       }
