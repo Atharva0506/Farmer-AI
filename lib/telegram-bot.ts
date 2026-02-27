@@ -89,12 +89,26 @@ function splitMessage(text: string, maxLen: number): string[] {
     return chunks;
 }
 
+// ─── Download file from Telegram ──────────────
+async function downloadTelegramFile(fileId: string): Promise<string> {
+    const token = getTelegramToken();
+    const fileRes = await fetch(`${TELEGRAM_API}${token}/getFile?file_id=${fileId}`);
+    const fileData = await fileRes.json();
+    if (!fileData.ok || !fileData.result?.file_path) {
+        throw new Error("Could not get file from Telegram");
+    }
+    const downloadUrl = `https://api.telegram.org/file/bot${token}/${fileData.result.file_path}`;
+    const imageRes = await fetch(downloadUrl);
+    const buffer = Buffer.from(await imageRes.arrayBuffer());
+    const base64 = buffer.toString("base64");
+    const mimeType = fileData.result.file_path.endsWith(".png") ? "image/png" : "image/jpeg";
+    return `data:${mimeType};base64,${base64}`;
+}
+
 // ─── Detect language from text ─────────────────
 function detectLanguage(text: string): string {
     const hindiRegex = /[\u0900-\u097F]/;
-    const marathiWithHindi = /[\u0900-\u097F]/;
-    if (marathiWithHindi.test(text)) {
-        // Both Marathi and Hindi use Devanagari; default to Hindi for Telegram
+    if (hindiRegex.test(text)) {
         return "hi";
     }
     return "en";
@@ -168,7 +182,7 @@ function buildTelegramTools(language: string) {
                         disease: report.disease,
                         severity: report.severity,
                         confidence: report.confidence,
-                        treatments: report.treatments?.slice(0, 3),
+                        treatments: report.treatment?.slice(0, 3),
                         instruction: `Present disease diagnosis concisely with treatment. ${langReminder}`,
                     };
                 } catch {
@@ -222,18 +236,81 @@ function buildTelegramTools(language: string) {
     };
 }
 
+// ─── Process photo message ─────────────────────
+async function processTelegramPhoto(message: {
+    message_id: number;
+    from: { id: number; first_name: string };
+    chat: { id: number };
+    photo?: { file_id: string; width: number; height: number }[];
+    caption?: string;
+}) {
+    const chatId = message.chat.id;
+    await sendTelegramTyping(chatId);
+
+    try {
+        const photos = message.photo || [];
+        const largestPhoto = photos[photos.length - 1];
+        if (!largestPhoto) {
+            await sendTelegramMessage(chatId, "⚠️ Could not read the photo. Please try again.");
+            return;
+        }
+
+        await sendTelegramMessage(chatId, "🔍 Analyzing your crop image... Please wait.", { parse_mode: "Markdown" });
+
+        const imageDataUrl = await downloadTelegramFile(largestPhoto.file_id);
+        const caption = message.caption?.trim() || "";
+        const language = caption ? detectLanguage(caption) : "en";
+        const langName = language === "hi" ? "Hindi (हिंदी)" : language === "mr" ? "Marathi (मराठी)" : "English";
+        const startTime = Date.now();
+
+        const result = await generateText({
+            model: google("gemini-2.5-flash"),
+            system: `You are KrishiMitra AI (कृषि मित्र), a crop disease expert on Telegram.
+Analyze the uploaded crop/plant image and identify diseases, pests, or nutrient deficiencies.
+Provide: 1) Disease name 2) Severity 3) Cause 4) Treatment (chemical + organic with Indian brands) 5) Prevention
+RESPOND in ${langName}. Be concise. Use emojis. Keep under 3000 chars.`,
+            messages: [
+                {
+                    role: "user",
+                    content: [
+                        { type: "image" as const, image: imageDataUrl },
+                        { type: "text" as const, text: caption || "Please analyze this crop image for diseases." },
+                    ],
+                },
+            ],
+        });
+
+        await sendTelegramMessage(chatId, result.text || "Could not analyze the image.");
+
+        const usage = extractUsage(result);
+        logApiUsage({ route: "/api/telegram/webhook (photo)", ...usage, durationMs: Date.now() - startTime });
+    } catch (error) {
+        console.error("Telegram photo analysis error:", error);
+        await sendTelegramMessage(chatId, "⚠️ Could not analyze the image. Try a clearer photo or describe symptoms in text.");
+    }
+}
+
 // ─── Process incoming Telegram message ─────────
 export async function processTelegramMessage(message: {
     message_id: number;
     from: { id: number; first_name: string };
     chat: { id: number };
     text?: string;
+    photo?: { file_id: string; width: number; height: number }[];
+    caption?: string;
 }) {
     const chatId = message.chat.id;
+
+    // Handle photo messages
+    if (message.photo && message.photo.length > 0) {
+        await processTelegramPhoto(message);
+        return;
+    }
+
     const userText = message.text?.trim();
 
     if (!userText) {
-        await sendTelegramMessage(chatId, "🌿 Please send a text message. Photo analysis coming soon!");
+        await sendTelegramMessage(chatId, "🌿 Send a text message or a photo of your crop for disease analysis!");
         return;
     }
 
@@ -282,7 +359,7 @@ RESPOND ENTIRELY in ${langName}. Be concise — Telegram has character limits.
 Use simple language. Include emojis for readability.
 If the farmer asks about something you can use a tool for, USE the tool.
 Keep responses under 2000 characters.`,
-            prompt: userText,
+            messages: [{ role: "user" as const, content: userText }],
             tools: buildTelegramTools(language),
             maxSteps: 3,
         });
