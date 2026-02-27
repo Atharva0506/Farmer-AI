@@ -24,6 +24,28 @@ The conversational AI automatically detects farmer intent and invokes the right 
 | 12 | ✅ **Scheme Auto-Apply** | Document checklist + pre-filled application data |
 | 13 | ⛈️ **Weather Calendar Alerts** | Micro-climate alerts with 5-day farming task planner |
 
+### 💬 Example Prompts (Voice or Text)
+
+Just speak or type naturally — the AI picks the right tool automatically:
+
+| Tool | Example Prompt |
+|------|---------------|
+| 🌾 Crop Guidance | *"Mere gehun mein kya fertilizer daalu?"* / *"Best fertilizer for wheat?"* |
+| 🐛 Disease Detection | *"Mere tamatar ki pattiyon pe dhabbhe hain"* / *"Yellow spots on my rice leaves"* |
+| 📋 Scheme Finder | *"Sarkaari yojana kaun si hai mere liye?"* / *"Which schemes can I apply for?"* |
+| 💰 Sell Produce | *"Mera 500 kg pyaz bechna hai"* / *"I want to sell 200 kg tomatoes"* |
+| 👥 Find Buyers | *"Gehun ka khareedaar dhundo"* / *"Find buyers for my rice"* |
+| ☀️ Weather Advisory | *"Aaj mausam kaisa hai khet ke liye?"* / *"Is it safe to spray today?"* |
+| 📊 Market Prices | *"Pyaz ka bhav kya hai?"* / *"What's the current price of onion?"* |
+| 🧪 Soil Analysis | *"Meri mitti kaali hai, gehun lagana hai"* / *"Black soil planning wheat"* |
+| 📈 Yield Forecast | *"Mere gehun ka paidawar kitna hoga 5 acre mein?"* / *"Expected yield for rice on 3 acres?"* |
+| 📅 Farming Calendar | *"Gehun ki fasal ka poora calendar do"* / *"Give me a wheat farming calendar"* |
+| 🤝 Price Negotiation | *"500 kg pyaz ka sahi daam kya hona chahiye?"* / *"What price should I sell onions at?"* |
+| ✅ Scheme Auto-Apply | *"PM-KISAN ke liye kaise apply karu?"* / *"Help me apply for Fasal Bima Yojana"* |
+| ⛈️ Weather Alerts | *"Is hafte barish hogi kya? Gehu ke liye kya karu?"* / *"Weather alerts for my wheat crop"* |
+
+> 🗣️ **Voice Mode**: Say these in Hindi, Marathi, or English — the AI detects your language automatically!
+
 ---
 
 ## 🚀 Key Features
