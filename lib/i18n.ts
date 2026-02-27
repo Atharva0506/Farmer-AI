@@ -182,6 +182,9 @@ export const translations: Record<Language, Record<string, string>> = {
     weatherPlaceholder: "कोणत्या कामासाठी हवामान सल्ला हवा?",
     soilanalysisPlaceholder: "माती बद्दल प्रश्न विचारा...",
     marketpricesPlaceholder: "कोणत्या पिकाचे भाव जाणून घ्यायचे?",
+    cropHealth: "पीक आरोग्य",
+    cropCalendar: "शेती दिनदर्शिका",
+    schemeApply: "योजना अर्ज",
   },
   hi: {
     appName: "किसान मित्र",
@@ -358,6 +361,9 @@ export const translations: Record<Language, Record<string, string>> = {
     weatherPlaceholder: "किस काम के लिए मौसम सलाह चाहिए?",
     soilanalysisPlaceholder: "मिट्टी के बारे में प्रश्न पूछें...",
     marketpricesPlaceholder: "किस फसल का भाव जानना है?",
+    cropHealth: "फसल स्वास्थ्य",
+    cropCalendar: "खेती कैलेंडर",
+    schemeApply: "योजना आवेदन",
   },
   en: {
     appName: "Kisan Mitra",
@@ -534,6 +540,9 @@ export const translations: Record<Language, Record<string, string>> = {
     weatherPlaceholder: "What farming activity needs weather advice?",
     soilanalysisPlaceholder: "Ask about your soil condition...",
     marketpricesPlaceholder: "Which crop's price do you want to know?",
+    cropHealth: "Crop Health",
+    cropCalendar: "Crop Calendar",
+    schemeApply: "Apply for Schemes",
   },
 }
 

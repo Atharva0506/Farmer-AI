@@ -5,6 +5,7 @@ import { Sprout } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { AIChatBubble } from "@/components/features/assistant/ai-chat-bubble"
 import { ChatInput } from "@/components/features/assistant/chat-input"
+import { ToolCallIndicator } from "@/components/features/assistant/tool-call-indicator"
 import { useLanguage } from "@/lib/language-context"
 import { useGeolocation } from "@/hooks/use-geolocation"
 import { useChat } from "@ai-sdk/react"
@@ -59,6 +60,18 @@ export default function AssistantPage() {
       .filter((p) => p.type === "file")
       .map((p) => (p as FileUIPart).url)
       .filter(Boolean)
+  }, [])
+
+  // ─── Extract tool invocations from UIMessage ──────────────
+  const getToolCalls = useCallback((msg: UIMessage): { toolName: string; state: string; toolCallId: string }[] => {
+    if (!msg.parts) return []
+    return msg.parts
+      .filter((p) => p.type === "tool-invocation")
+      .map((p: any) => ({
+        toolName: p.toolName,
+        state: p.state, // "call" | "partial-call" | "result"
+        toolCallId: p.toolCallId,
+      }))
   }, [])
 
   // ─── Handle navigation tool calls from AI ──────────
@@ -211,7 +224,7 @@ export default function AssistantPage() {
 
   // ─── MAIN UI ──────────────────────────
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] md:h-screen overflow-hidden bg-background relative">
+    <div className="flex flex-col h-[calc(100dvh-7rem)] md:h-[calc(100vh-3rem)] overflow-hidden bg-background relative">
       {/* Messages */}
       <div className="flex-1 overflow-y-auto w-full no-scrollbar pb-2 relative">
         <div className="flex flex-col gap-6 px-4 py-6 max-w-3xl mx-auto min-h-full">
@@ -258,19 +271,36 @@ export default function AssistantPage() {
           {messages.map((msg) => {
             const text = getMessageText(msg)
             const images = getMessageImages(msg)
+            const toolCalls = msg.role === "assistant" ? getToolCalls(msg) : []
             return (
-              <AIChatBubble
-                key={msg.id}
-                message={text}
-                isAI={msg.role === "assistant"}
-                images={images}
-                isSpeaking={speakingMsgId === msg.id}
-                onSpeak={
-                  msg.role === "assistant" && text
-                    ? () => handleSpeak(text, msg.id)
-                    : undefined
-                }
-              />
+              <div key={msg.id} className="flex flex-col gap-2">
+                {/* Tool Call Indicators */}
+                {toolCalls.length > 0 && (
+                  <div className="self-start flex flex-wrap gap-1.5 ml-10">
+                    {toolCalls.map((tc) => (
+                      <ToolCallIndicator
+                        key={tc.toolCallId}
+                        toolName={tc.toolName}
+                        state={tc.state as "call" | "partial-call" | "result"}
+                      />
+                    ))}
+                  </div>
+                )}
+                {/* Message Bubble */}
+                {(text || images.length > 0) && (
+                  <AIChatBubble
+                    message={text}
+                    isAI={msg.role === "assistant"}
+                    images={images}
+                    isSpeaking={speakingMsgId === msg.id}
+                    onSpeak={
+                      msg.role === "assistant" && text
+                        ? () => handleSpeak(text, msg.id)
+                        : undefined
+                    }
+                  />
+                )}
+              </div>
             )
           })}
 
@@ -291,7 +321,7 @@ export default function AssistantPage() {
       </div>
 
       {/* Input Area */}
-      <div className="shrink-0 p-4 pb-20 md:pb-6 bg-background/80 backdrop-blur-md border-t border-border z-20">
+      <div className="shrink-0 p-4 pb-6 bg-background/80 backdrop-blur-md border-t border-border z-20">
         <ChatInput
           input={input}
           setInput={setInput}

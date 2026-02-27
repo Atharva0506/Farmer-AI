@@ -9,105 +9,183 @@ import {
     Users,
     FileText,
     TrendingUp,
-    Cloud,
-    Thermometer,
-    Droplets,
     ArrowRight,
+    Loader2,
+    AlertCircle,
+    ShieldCheck,
+    Activity,
+    CalendarDays,
     MapPin,
     AlertTriangle,
-    Lightbulb,
-    Sun,
-    CloudRain,
-    Wind
 } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useLanguage } from "@/lib/language-context"
 import { WeatherWidget } from "@/components/features/dashboard/weather-widget"
-// import { useSession } from "next-auth/react" // TODO: Enable when session is needed
+
+interface DashboardData {
+    marketPrices: { crop: string; avgPrice: number; unit: string; listingCount: number }[]
+    userListings: { id: string; cropName: string; quantity: string; unit: string; pricePerUnit: number; status: string; createdAt: string }[]
+    diseaseReports: { id: string; cropName: string; disease: string; severity: string; confidence: number; createdAt: string }[]
+    profile: { name: string | null; crops: string[]; landSizeAcres: number | null; state: string | null; onboarded: boolean } | null
+    stats: { activeListings: number; totalDiseaseChecks: number }
+}
+
+interface NearbyAlert {
+    disease: string
+    cropName: string
+    reportCount: number
+    severity: string
+    states: string[]
+    isNearby: boolean
+    isRelevantCrop: boolean
+    latestDate: string
+}
 
 const quickActions = [
     { href: "/assistant", icon: Sprout, labelKey: "cropHelp", color: "bg-primary/10 text-primary" },
-    { href: "/assistant", icon: Camera, labelKey: "diseaseCheck", color: "bg-accent/10 text-accent" }, // Direct to assistant
+    { href: "/crop-health", icon: Activity, labelKey: "cropHealth", color: "bg-accent/10 text-accent" },
+    { href: "/crop-calendar", icon: CalendarDays, labelKey: "cropCalendar", color: "bg-primary/10 text-primary" },
+    { href: "/assistant", icon: Camera, labelKey: "diseaseCheck", color: "bg-accent/10 text-accent" },
     { href: "/post-produce", icon: ShoppingBag, labelKey: "sellProduce", color: "bg-primary/10 text-primary" },
-    { href: "/marketplace", icon: Users, labelKey: "findBuyers", color: "bg-accent/10 text-accent" },
-    { href: "/schemes", icon: FileText, labelKey: "govSchemes", color: "bg-primary/10 text-primary" },
+    { href: "/schemes", icon: FileText, labelKey: "govSchemes", color: "bg-accent/10 text-accent" },
 ]
+
+const severityColors: Record<string, string> = {
+    low: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+    medium: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
+    high: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+}
 
 export default function FarmerDashboard() {
     const { t } = useLanguage()
-    // const { data: session } = useSession()
-
-    // TODO: Replace with real weather data
-    const [location, setLocation] = useState<{ city: string, temp: string, condition: string }>({
-        city: "Pune, Maharashtra",
-        temp: "28",
-        condition: "Partly Cloudy"
-    })
+    const [data, setData] = useState<DashboardData | null>(null)
+    const [nearbyAlerts, setNearbyAlerts] = useState<NearbyAlert[]>([])
+    const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        if ("geolocation" in navigator) {
-            navigator.geolocation.getCurrentPosition((position) => {
-                // In production, call a reverse geocoding API with position.coords
-                setLocation({ city: "Nashik, MH (Detected)", temp: "30", condition: "Sunny" })
-            }, (error) => {
-                console.error("Error getting location:", error)
-            })
+        async function fetchData() {
+            try {
+                const res = await fetch("/api/dashboard-data")
+                if (res.ok) {
+                    const json = await res.json()
+                    setData(json)
+                }
+            } catch (err) {
+                console.error("Failed to fetch dashboard data:", err)
+            } finally {
+                setLoading(false)
+            }
         }
+        fetchData()
+
+        // Fetch nearby alerts (community disease data)
+        async function fetchAlerts() {
+            try {
+                const res = await fetch("/api/nearby-alerts")
+                if (res.ok) {
+                    const json = await res.json()
+                    setNearbyAlerts(json.alerts || [])
+                }
+            } catch { /* ignore */ }
+        }
+        fetchAlerts()
     }, [])
+
+    const greeting = data?.profile?.name
+        ? `${t("dashboard")}, ${data.profile.name}!`
+        : t("dashboard")
 
     return (
         <div className="px-4 py-5 md:px-6 lg:px-8 max-w-7xl mx-auto pb-24">
             <div className="flex justify-between items-center mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-foreground">{t("dashboard")}</h1>
-                    <p className="text-muted-foreground text-sm">Welcome back, Farmer</p>
+                    <h1 className="text-2xl font-bold text-foreground">{greeting}</h1>
+                    <p className="text-muted-foreground text-sm">
+                        {data?.profile?.crops?.length
+                            ? `🌾 ${data.profile.crops.join(", ")} • ${data.profile.landSizeAcres || "?"} acres${data.profile.state ? ` • ${data.profile.state}` : ""}`
+                            : new Date().toLocaleDateString()}
+                    </p>
                 </div>
-                <div className="text-right">
-                    <div className="text-sm font-medium text-foreground">{location.city}</div>
-                    <div className="text-xs text-muted-foreground">{new Date().toLocaleDateString()}</div>
-                </div>
+                {data?.profile && !data.profile.onboarded && (
+                    <Link href="/onboarding">
+                        <Button size="sm" variant="outline" className="text-xs">
+                            Complete Profile <ArrowRight size={14} className="ml-1" />
+                        </Button>
+                    </Link>
+                )}
             </div>
 
             {/* Weather Widget */}
             <WeatherWidget />
 
-            {/* AI Recommendations */}
+            {/* Crop Health Section */}
             <div className="mb-8">
                 <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-                    <Sprout className="text-primary" size={20} />
+                    <Activity className="text-primary" size={20} />
                     {t("aiRecommendations")}
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Card className="bg-destructive/10 border-destructive/20">
-                        <CardContent className="p-4 flex gap-4 items-start">
-                            <div className="h-10 w-10 rounded-full bg-destructive/20 flex items-center justify-center text-destructive shrink-0">
-                                <AlertTriangle size={20} />
-                            </div>
-                            <div>
-                                <h3 className="font-bold text-destructive mb-1">Pest Alert: Fall Armyworm</h3>
-                                <p className="text-sm text-destructive/80 mb-3">High risk for Maize crops in your area due to recent humidity.</p>
-                                <Button size="sm" variant="outline" className="border-destructive/30 text-destructive hover:bg-destructive/10">
-                                    View Remedies
-                                </Button>
-                            </div>
+
+                {loading ? (
+                    <Card>
+                        <CardContent className="p-8 flex items-center justify-center">
+                            <Loader2 className="h-6 w-6 animate-spin text-primary" />
                         </CardContent>
                     </Card>
-                    <Card className="bg-success/10 border-success/20">
-                        <CardContent className="p-4 flex gap-4 items-start">
-                            <div className="h-10 w-10 rounded-full bg-success/20 flex items-center justify-center text-success shrink-0">
-                                <TrendingUp size={20} />
+                ) : data?.diseaseReports && data.diseaseReports.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {data.diseaseReports.slice(0, 4).map((report) => (
+                            <Card key={report.id} className="border border-border hover:shadow-md transition-shadow">
+                                <CardContent className="p-4 flex gap-4 items-start">
+                                    <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${report.severity === "high"
+                                        ? "bg-destructive/20 text-destructive"
+                                        : report.severity === "medium"
+                                            ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                                            : "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                                        }`}>
+                                        {report.severity === "high" ? (
+                                            <AlertCircle size={20} />
+                                        ) : (
+                                            <ShieldCheck size={20} />
+                                        )}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <h3 className="font-bold text-foreground text-sm truncate">{report.disease}</h3>
+                                            <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${severityColors[report.severity] || ""}`}>
+                                                {report.severity}
+                                            </span>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">
+                                            {report.cropName} • {Math.round(report.confidence)}% confidence
+                                        </p>
+                                        <p className="text-[10px] text-muted-foreground mt-1">
+                                            {new Date(report.createdAt).toLocaleDateString()}
+                                        </p>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                ) : (
+                    <Card className="border-dashed border-2">
+                        <CardContent className="p-6 text-center">
+                            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                                <ShieldCheck size={24} className="text-primary" />
                             </div>
-                            <div>
-                                <h3 className="font-bold text-success-foreground dark:text-success mb-1">Price Trend: Onion</h3>
-                                <p className="text-sm text-success-foreground/80 dark:text-success/80 mb-3">Prices expected to rise by 15% next week. Hold your stock if possible.</p>
-                                <Button size="sm" variant="outline" className="border-success/30 text-success-foreground dark:text-success hover:bg-success/10">
-                                    Check Market
+                            <h3 className="font-semibold text-foreground mb-1">No crop health alerts</h3>
+                            <p className="text-sm text-muted-foreground mb-3">
+                                Upload a crop photo or describe symptoms to get AI diagnosis
+                            </p>
+                            <Link href="/assistant">
+                                <Button size="sm" variant="outline">
+                                    <Camera size={14} className="mr-2" />
+                                    Check Crop Health
                                 </Button>
-                            </div>
+                            </Link>
                         </CardContent>
                     </Card>
-                </div>
+                )}
             </div>
 
             {/* Quick Actions */}
@@ -129,31 +207,106 @@ export default function FarmerDashboard() {
                 </div>
             </div>
 
-            {/* Market Prices Ticker */}
+            {/* Nearby Disease Alerts — Community Intelligence */}
+            {nearbyAlerts.length > 0 && (
+                <div className="mb-8">
+                    <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+                        <MapPin className="text-red-500" size={20} />
+                        Nearby Disease Alerts
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {nearbyAlerts.slice(0, 4).map((alert, i) => (
+                            <Card key={i} className={`border ${alert.isNearby || alert.isRelevantCrop
+                                    ? "border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20"
+                                    : "border-border"
+                                }`}>
+                                <CardContent className="p-4 flex items-start gap-3">
+                                    <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${alert.severity === "high"
+                                            ? "bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400"
+                                            : "bg-yellow-100 text-yellow-600 dark:bg-yellow-900/40 dark:text-yellow-400"
+                                        }`}>
+                                        <AlertTriangle size={18} />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <h3 className="font-bold text-sm text-foreground truncate">{alert.disease}</h3>
+                                            <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${severityColors[alert.severity] || ""}`}>
+                                                {alert.severity.toUpperCase()}
+                                            </span>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">
+                                            🌿 {alert.cropName} • {alert.reportCount} report{alert.reportCount > 1 ? "s" : ""}
+                                            {alert.states.length > 0 && ` • ${alert.states.slice(0, 2).join(", ")}`}
+                                        </p>
+                                        <div className="flex gap-2 mt-1">
+                                            {alert.isNearby && (
+                                                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                                                    📍 Your State
+                                                </span>
+                                            )}
+                                            {alert.isRelevantCrop && (
+                                                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
+                                                    🌾 Your Crop
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Market Prices */}
             <div>
                 <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg font-bold text-foreground">{t("market")}</h2>
                     <Link href="/marketplace" className="text-sm text-primary hover:underline">{t("viewAll")}</Link>
                 </div>
-                <Card>
-                    <CardContent className="p-0">
-                        {[
-                            { crop: "Tomato", price: "₹25/kg", trend: "up" },
-                            { crop: "Onion", price: "₹18/kg", trend: "down" },
-                            { crop: "Potato", price: "₹30/kg", trend: "stable" }
-                        ].map((item, i) => (
-                            <div key={item.crop} className={`flex items-center justify-between p-4 ${i !== 2 ? 'border-b border-border' : ''}`}>
-                                <div className="font-medium">{item.crop}</div>
-                                <div className="flex items-center gap-3">
-                                    <span className="font-bold">{item.price}</span>
-                                    {item.trend === 'up' && <TrendingUp size={16} className="text-green-500" />}
-                                    {item.trend === 'down' && <TrendingUp size={16} className="text-red-500 transform rotate-180" />}
-                                    {item.trend === 'stable' && <span className="text-muted-foreground text-xs">●</span>}
+
+                {loading ? (
+                    <Card>
+                        <CardContent className="p-8 flex items-center justify-center">
+                            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                        </CardContent>
+                    </Card>
+                ) : data?.marketPrices && data.marketPrices.length > 0 ? (
+                    <Card>
+                        <CardContent className="p-0">
+                            {data.marketPrices.map((item, i) => (
+                                <div key={item.crop} className={`flex items-center justify-between p-4 ${i !== data.marketPrices.length - 1 ? 'border-b border-border' : ''}`}>
+                                    <div>
+                                        <div className="font-medium text-foreground">{item.crop}</div>
+                                        <div className="text-xs text-muted-foreground">{item.listingCount} listings</div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <span className="font-bold text-foreground">₹{item.avgPrice}/{item.unit}</span>
+                                        <TrendingUp size={16} className="text-green-500" />
+                                    </div>
                                 </div>
+                            ))}
+                        </CardContent>
+                    </Card>
+                ) : (
+                    <Card className="border-dashed border-2">
+                        <CardContent className="p-6 text-center">
+                            <div className="h-12 w-12 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-3">
+                                <ShoppingBag size={24} className="text-accent" />
                             </div>
-                        ))}
-                    </CardContent>
-                </Card>
+                            <h3 className="font-semibold text-foreground mb-1">No market prices yet</h3>
+                            <p className="text-sm text-muted-foreground mb-3">
+                                Be the first to list your produce and set the price
+                            </p>
+                            <Link href="/post-produce">
+                                <Button size="sm" variant="outline">
+                                    <ShoppingBag size={14} className="mr-2" />
+                                    List Your Produce
+                                </Button>
+                            </Link>
+                        </CardContent>
+                    </Card>
+                )}
             </div>
         </div>
     )

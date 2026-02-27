@@ -14,7 +14,10 @@ import {
     Menu,
     LayoutDashboard,
     Sprout,
-    Bug
+    Bug,
+    Activity,
+    CalendarDays,
+    FileCheck,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useLanguage } from "@/lib/language-context"
@@ -41,9 +44,12 @@ export function SidebarNav({ userRole, isCollapsed, toggleSidebar }: SidebarNavP
         : [
             { href: "/dashboard/farmer", icon: Home, labelKey: "home" },
             { href: "/assistant", icon: MessageCircle, labelKey: "assistant" },
+            { href: "/crop-health", icon: Activity, labelKey: "cropHealth" },
+            { href: "/crop-calendar", icon: CalendarDays, labelKey: "cropCalendar" },
             { href: "/crop-disease", icon: Bug, labelKey: "diseaseCheck" },
             { href: "/marketplace", icon: ShoppingBag, labelKey: "market" },
             { href: "/post-produce", icon: Package, labelKey: "postProduce" },
+            { href: "/scheme-apply", icon: FileCheck, labelKey: "schemeApply" },
             { href: "/schemes", icon: FileText, labelKey: "schemes" },
         ]
 

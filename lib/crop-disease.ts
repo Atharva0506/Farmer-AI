@@ -13,6 +13,7 @@ import {
   makeCacheKey,
 } from "@/lib/cache";
 import { logApiUsage, extractUsage } from "@/lib/usage-logger";
+import { prisma } from "@/lib/prisma";
 
 // ─── Constants ──────────────────────────────
 const MAX_IMAGE_DIMENSION = 1024;
@@ -112,6 +113,8 @@ export interface DiseaseAnalysisParams {
   symptoms?: string | null;
   cropName?: string | null;
   language?: string;
+  /** User ID for persisting disease reports */
+  userId?: string | null;
 }
 
 export async function analyzeCropDisease(
@@ -124,6 +127,7 @@ export async function analyzeCropDisease(
     symptoms,
     cropName,
     language = "en",
+    userId,
   } = params;
 
   const langName = LANG_MAP[language] || "English";
@@ -206,6 +210,24 @@ Use simple farmer-friendly language. Costs in ₹. Include both chemical and org
 
   // Cache for 7 days
   await setCachedResponse(cacheKey, result.object, 7 * 24 * 60 * 60);
+
+  // Persist disease report for user history (fire-and-forget)
+  if (userId) {
+    prisma.diseaseReport
+      .create({
+        data: {
+          userId,
+          cropName: result.object.affectedCrop || cropName || "Unknown",
+          disease: result.object.disease,
+          severity: result.object.severity,
+          confidence: result.object.confidence,
+          treatments: JSON.stringify(result.object.treatment.slice(0, 4)),
+        },
+      })
+      .catch((err: unknown) => {
+        console.error("Failed to persist disease report:", err);
+      });
+  }
 
   return result.object;
 }

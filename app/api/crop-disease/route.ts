@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { checkRateLimit, getClientIP, rateLimitResponse } from "@/lib/rate-limit";
 import { logApiUsage } from "@/lib/usage-logger";
 import { analyzeCropDisease, compressImage, type DiseaseReport } from "@/lib/crop-disease";
+import { auth } from "@/auth";
 
 export const maxDuration = 60;
 
@@ -44,12 +45,17 @@ export async function POST(req: Request) {
       imageBuffer = await image.arrayBuffer();
     }
 
+    // Get user ID for persisting disease reports
+    const session = await auth();
+    const userId = session?.user?.id || null;
+
     // Use shared module for analysis (handles caching, compression, LLM call)
     const report = await analyzeCropDisease({
       imageBuffer,
       symptoms,
       cropName,
       language,
+      userId,
     });
 
     logApiUsage({

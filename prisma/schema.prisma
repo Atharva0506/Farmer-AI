@@ -25,13 +25,19 @@ model User {
   phone         String?   @unique
   role          Role      @default(FARMER)
   location      String?   // JSON string or simpler "{lat, lng}"
+  crops         String[]  @default([])
+  landSizeAcres Float?
+  state         String?
+  incomeRange   String?
+  onboarded     Boolean   @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts      Account[]
-  sessions      Session[]
-  chats         Chat[]
-  listings      Listing[]
+  accounts       Account[]
+  sessions       Session[]
+  chats          Chat[]
+  listings       Listing[]
+  diseaseReports DiseaseReport[]
 }
 
 model Account {
@@ -144,4 +150,21 @@ model Listing {
   @@index([status])
   @@index([cropName])
   @@index([userId])
+}
+
+// ─── Disease Reports (Persisted AI Analysis) ─
+model DiseaseReport {
+  id            String   @id @default(cuid())
+  userId        String
+  cropName      String
+  disease       String
+  severity      String   // low, medium, high
+  confidence    Float    @default(0)
+  treatments    String   @db.Text // JSON stringified
+  createdAt     DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
 }

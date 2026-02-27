@@ -1,99 +1,185 @@
-# KrishiMitra (Farmer Helper) - Conversational AI Assistant
+# 🌿 KrishiMitra — AI-Powered Agriculture Assistant
 
-KrishiMitra is an advanced, voice-first AI assistant designed to empower Indian farmers with real-time agricultural intelligence. Built with **Next.js 16**, **AI SDK**, and **Google Gemini 2.5 Flash**, it offers a seamless multimodal experience (Voice + Text + Image) to solve day-to-day farming challenges.
+KrishiMitra (कृषि मित्र) is an advanced voice-first, multilingual AI assistant designed to empower Indian farmers. Built with **Next.js 16**, **AI SDK**, **Google Gemini 2.5 Flash**, and **PostgreSQL**, it delivers real-time agricultural intelligence through Voice + Text + Image.
 
-![KrishiMitra AI](https://placehold.co/1200x600?text=KrishiMitra+AI+Dashboard)
+---
 
-## ��� Key Features
+## 🧠 13 AI-Powered Tools
 
-### ���️ Conversational Voice AI
-- **Voice-First Interface**: Speak naturally in **Hindi, Marathi, or English**.
-- **Auto-Language Detection**: The AI replies in your spoken language.
-- **Hands-Free Mode**: Perfect for use in the field.
-- **Interactive**: Listens, thinks, and speaks back with farming advice.
+The conversational AI automatically detects farmer intent and invokes the right tool:
 
-### ��� Intelligent Tools (Auto-Detected Intents)
-The AI automatically understands your intent and calls the right tool:
+| # | Tool | What It Does |
+|---|------|-------------|
+| 1 | 🌾 **Crop Guidance** | Planting, fertilizers, pest management advice |
+| 2 | 🐛 **Disease Detection** | Photo/symptom-based diagnosis with treatment plans |
+| 3 | 📋 **Scheme Finder** | Google-grounded search for government subsidies |
+| 4 | 💰 **Sell Produce** | Lists harvest for sale directly from chat |
+| 5 | 👥 **Find Buyers** | Queries marketplace for matching produce buyers |
+| 6 | ☀️ **Weather Advisory** | Real-time Open-Meteo forecasts + farming advice |
+| 7 | 📊 **Market Prices** | Live mandi rates from platform listings |
+| 8 | 🧪 **Soil Analysis** | AI-powered soil health, pH, and nutrient assessment |
+| 9 | 📈 **Yield & Revenue Forecast** | Predicted yield (min/expected/max) with revenue in ₹ |
+| 10 | 📅 **Farming Calendar** | Week-by-week AI farming plan with growth phases |
+| 11 | 🤝 **Price Negotiation** | Compares prices from DB + suggests optimal price |
+| 12 | ✅ **Scheme Auto-Apply** | Document checklist + pre-filled application data |
+| 13 | ⛈️ **Weather Calendar Alerts** | Micro-climate alerts with 5-day farming task planner |
 
-1.  **��� Crop Assistance**: Guidance on planting, fertilizers, and pest management.
-2.  **��� Disease Detection**: 
-    - Upload photos of affected crops.
-    - AI analyzes symptoms and suggests chemical/organic remedies.
-3.  **��� Scheme Finder**: Finds government subsidies (PM-KISAN, etc.) matching your profile.
-4.  **��� Sell Produce**: 
-    - List your harvest for sale directly from the chat.
-    - Connects with local buyers.
-5.  **⛅ Weather Advisory**: Real-time forecasts + farming activity recommendations (e.g., "Is it safe to spray today?").
-6.  **��� Market Prices**: Live mandi rates (APMC) for your crops.
-7.  **��� Soil Analysis**: Upload soil reports or describe soil conditions for fertilizer advice.
-8.  **��� Find Buyers**: Locate active buyers for your specific crop.
+---
 
-### ��� User Experience
-- **Floating Chat Widget**: Accessible anywhere in the app.
-- **Offline Support**: PWA capabilities (coming soon).
-- **Localized UI**: All buttons and text available in regional languages.
+## 🚀 Key Features
 
-## ���️ Tech Stack
+### 🗣️ Voice-First AI Assistant
+- Speak naturally in **Hindi, Marathi, or English**
+- Auto language detection — AI replies in your language
+- Text-to-speech for hands-free field use
+- Real-time tool call visualization (see what the AI is doing)
 
-- **Framework**: [Next.js 16](https://nextjs.org/) (App Router)
-- **AI Engine**: [Vercel AI SDK](https://sdk.vercel.ai/docs) + Google Gemini 2.5 Flash
-- **Database**: PostgreSQL + Prisma ORM
-- **Styling**: Tailwind CSS + Shadcn UI
-- **Auth**: NextAuth.js (Phone/OTP)
-- **Maps**: OpenStreetMap / Google Maps (optional)
-- **Voice**: Web Speech API (Speech Recognition & Synthesis)
+### 🧬 Crop Health Timeline (`/crop-health`)
+- Visual disease progression tracking per crop
+- Severity trend indicators (Improving / Worsening / Stable)
+- Timeline with treatment history
+
+### 📅 AI Farming Calendar (`/crop-calendar`)
+- Enter crop + sowing date → full AI-generated calendar
+- Growth phase progress bar with color-coded phases
+- Week-by-week tasks by category (irrigation, fertilizer, pest control)
+- Current week highlighted with upcoming critical alerts
+
+### 📋 Smart Scheme Auto-Apply (`/scheme-apply`)
+- Visual document checklist (✅ available / ⭕ missing)
+- Pre-filled farmer info from profile
+- Step-by-step application with online/offline badges
+- Deadline warnings + nearest office suggestion
+- Popular scheme shortcuts (PM-KISAN, PMFBY, KCC, etc.)
+
+### 🗺️ Nearby Disease Alerts (Dashboard)
+- Community-aggregated disease reports from all users
+- Relevance scoring: same state + same crops = higher priority
+- Tags: `📍 Your State` and `🌾 Your Crop`
+- Network effect: more users → better alerts
+
+### 🌦️ Micro-Climate Weather Alerts
+- Real weather from Open-Meteo + Gemini AI analysis
+- 5-day farming task planner (best activity + what to avoid)
+- Irrigation advice (should irrigate? when next?)
+- Crop-specific alerts (frost, heavy rain, heat stress, etc.)
+
+### 🤖 Telegram Bot Gateway
+- All AI tools accessible via Telegram — no app install needed
+- `/start` and `/help` commands
+- Hindi/English language detection
+- Zero npm dependencies — uses raw Telegram Bot API
+
+### 👨‍🌾 Personalized Experience
+- Farmer onboarding with crop selection (12+ Indian crops)
+- Dynamic dashboard with real marketplace data
+- AI responses personalized using farmer profile (crops, land size, state)
+
+### 🏪 Marketplace
+- List and browse produce with prices
+- Direct farmer-to-buyer connection
+- Quality grades and location data
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| **Framework** | Next.js 16 (App Router) |
+| **AI Engine** | Vercel AI SDK + Google Gemini 2.5 Flash |
+| **Database** | PostgreSQL + Prisma ORM |
+| **Styling** | Tailwind CSS + Shadcn UI |
+| **Auth** | NextAuth.js (Phone/OTP) |
+| **Weather** | Open-Meteo API (free, no key required) |
+| **Voice** | Web Speech API (Recognition & Synthesis) |
+| **Bot** | Telegram Bot API (raw fetch) |
+| **Caching** | PostgreSQL-based with configurable TTL |
+
+---
 
 ## ⚡ Getting Started
 
 ### Prerequisites
-- Node.js 18+ 
+- Node.js 18+
 - PostgreSQL database
 - Google AI Studio API Key
 
 ### Installation
 
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/your-username/farmer-helper.git
-    cd farmer-helper
-    ```
+```bash
+# 1. Clone
+git clone https://github.com/your-username/farmer-helper.git
+cd farmer-helper
 
-2.  **Install dependencies:**
-    ```bash
-    npm install
-    # or
-    pnpm install
-    ```
+# 2. Install dependencies
+pnpm install
 
-3.  **Set up Environment Variables:**
-    Copy `.env.example` to `.env` and fill in your keys:
-    ```bash
-    cp .env.example .env
-    ```
-    
-    Required variables:
-    - `DATABASE_URL`: Your Postgres connection string.
-    - `AUTH_SECRET`: Generate with `openssl rand -base64 32`.
-    - `GOOGLE_GENERATIVE_AI_API_KEY`: Get from [Google AI Studio](https://aistudio.google.com/).
+# 3. Set up environment
+cp .env.example .env
+# Fill in: DATABASE_URL, AUTH_SECRET, GOOGLE_GENERATIVE_AI_API_KEY
 
-4.  **Initialize Database:**
-    ```bash
-    npx prisma generate
-    npx prisma db push
-    ```
+# 4. Initialize database
+npx prisma generate
+npx prisma db push
 
-5.  **Run Development Server:**
-    ```bash
-    npm run dev
-    ```
+# 5. Run development server
+pnpm dev
+```
 
-6.  **Open in Browser:**
-    Visit `http://localhost:3000`.
+### Telegram Bot Setup (Optional)
+```bash
+# 1. Create bot via @BotFather on Telegram
+# 2. Add to .env:
+TELEGRAM_BOT_TOKEN=your_bot_token
 
-## ��� Contributing
+# 3. After deployment, register webhook:
+# GET /api/telegram/setup?url=https://your-domain.com
+
+# 4. Send /start to your bot on Telegram
+```
+
+---
+
+## 📁 Project Structure
+
+```
+app/
+├── api/
+│   ├── chat/              # Main AI chat endpoint (13 tools)
+│   ├── farming-calendar/  # AI farming calendar generation
+│   ├── weather-alerts/    # Micro-climate weather alerts
+│   ├── scheme-apply/      # Smart scheme application guide
+│   ├── nearby-alerts/     # Community disease alerts
+│   ├── telegram/          # Telegram bot (webhook + setup)
+│   ├── dashboard-data/    # Dynamic farmer dashboard
+│   ├── disease-history/   # Crop disease history
+│   └── profile/           # Farmer profile management
+├── (protected)/
+│   ├── assistant/         # AI chat interface
+│   ├── crop-health/       # Disease progression timeline
+│   ├── crop-calendar/     # AI farming calendar
+│   ├── scheme-apply/      # Scheme application page
+│   ├── dashboard/         # Farmer & buyer dashboards
+│   └── marketplace/       # Produce listings
+lib/
+├── farming-calendar.ts    # Calendar generation with Gemini
+├── yield-forecast.ts      # Yield prediction with Gemini
+├── weather-alerts.ts      # Weather + farming alerts
+├── crop-disease.ts        # Disease analysis
+├── soil-analysis.ts       # Soil health analysis
+├── telegram-bot.ts        # Telegram bot handler
+├── schemes.ts             # Scheme search with Google Search
+├── cache.ts               # PostgreSQL caching
+└── i18n.ts                # Multilingual translations (mr/hi/en)
+```
+
+---
+
+## 🤝 Contributing
 
 Contributions are welcome! Please open an issue or submit a pull request.
 
-## ��� License
+## 📄 License
 
 This project is licensed under the MIT License.

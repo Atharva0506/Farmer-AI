@@ -18,6 +18,10 @@ import { logApiUsage, extractUsage } from "@/lib/usage-logger";
 import { prisma } from "@/lib/prisma";
 import { searchSchemes } from "@/lib/schemes";
 import { analyzeCropDisease } from "@/lib/crop-disease";
+import { analyzeSoil } from "@/lib/soil-analysis";
+import { generateFarmingCalendar } from "@/lib/farming-calendar";
+import { generateYieldForecast } from "@/lib/yield-forecast";
+import { generateWeatherAlerts } from "@/lib/weather-alerts";
 import { auth } from "@/auth";
 
 export const maxDuration = 60;
@@ -36,10 +40,30 @@ const LANG_MAP: Record<string, string> = {
 
 
 // System Prompt Builder
-function buildSystemPrompt(lang: string): string {
+interface FarmerProfile {
+  name?: string | null;
+  crops?: string[];
+  landSizeAcres?: number | null;
+  state?: string | null;
+  incomeRange?: string | null;
+}
+
+function buildSystemPrompt(lang: string, profile?: FarmerProfile | null): string {
   const respondIn = LANG_MAP[lang] || "English";
 
-  return `You are ${BOT_NAME} (${BOT_NAME_LOCAL}), an expert Indian farming assistant built to help farmers across India.
+  // Build personalized context if profile exists
+  let profileContext = "";
+  if (profile && (profile.crops?.length || profile.landSizeAcres || profile.state)) {
+    const parts: string[] = [];
+    if (profile.name) parts.push(`Name: ${profile.name}`);
+    if (profile.crops?.length) parts.push(`Crops: ${profile.crops.join(", ")}`);
+    if (profile.landSizeAcres) parts.push(`Land: ${profile.landSizeAcres} acres`);
+    if (profile.state) parts.push(`State: ${profile.state}`);
+    if (profile.incomeRange) parts.push(`Income: ${profile.incomeRange}`);
+    profileContext = `\n\n## FARMER PROFILE (Use this to personalize advice)\n${parts.join(" | ")}`;
+  }
+
+  return `You are ${BOT_NAME} (${BOT_NAME_LOCAL}), an expert Indian farming assistant built to help farmers across India.${profileContext}
 
 ## LANGUAGE RULE (HIGHEST PRIORITY)
 You MUST respond ENTIRELY in ${respondIn}. This is NON-NEGOTIABLE.
@@ -332,9 +356,8 @@ function buildTools(userId: string | null, latitude: number | null, longitude: n
               priceRange: `INR ${minPrice} - INR ${maxPrice}`,
               unit: listings[0].unit,
             } : null,
-            instruction: `Provide market price info for ${crop}. ${
-              listings.length > 0 ? `Platform has ${listings.length} listings with avg INR ${avgPrice}. Expand with mandi knowledge.` : "No platform listings. Use knowledge of recent Indian mandi rates."
-            } Include trends, best markets, tips. ${langReminder}`,
+            instruction: `Provide market price info for ${crop}. ${listings.length > 0 ? `Platform has ${listings.length} listings with avg INR ${avgPrice}. Expand with mandi knowledge.` : "No platform listings. Use knowledge of recent Indian mandi rates."
+              } Include trends, best markets, tips. ${langReminder}`,
           };
         } catch {
           return {
@@ -358,7 +381,7 @@ function buildTools(userId: string | null, latitude: number | null, longitude: n
       }),
       execute: async ({ symptoms, cropName }: { symptoms: string; cropName?: string }) => {
         try {
-          const report = await analyzeCropDisease({ symptoms, cropName, language });
+          const report = await analyzeCropDisease({ symptoms, cropName, language, userId });
           return {
             action: "disease_report",
             disease: report.disease,
@@ -394,20 +417,243 @@ function buildTools(userId: string | null, latitude: number | null, longitude: n
       execute: async ({ description, crop, region }: {
         description: string; crop?: string; region?: string;
       }) => {
+        try {
+          const report = await analyzeSoil({ description, crop, region, language });
+          return {
+            action: "soil_analysis_report",
+            soilType: report.soilType,
+            ph: report.phLevel,
+            nutrients: report.nutrients,
+            organicMatter: report.organicMatter,
+            recommendations: report.recommendations.slice(0, 5),
+            cropSuitability: report.cropSuitability,
+            longTermPlan: report.longTermPlan,
+            instruction: `Present this detailed soil analysis to the farmer. Highlight critical nutrient deficiencies, recommend specific amendments with costs in ₹, and explain the long-term plan. ${langReminder}`,
+          };
+        } catch {
+          return {
+            action: "soil_analysis_fallback",
+            description,
+            crop: crop || "general",
+            region: region || "India",
+            instruction: `Soil analysis engine failed. Provide expert soil advice from your knowledge based on: "${description}". Include pH, NPK recommendations, organic and chemical amendments with costs. ${langReminder}`,
+          };
+        }
+      },
+    }),
+
+    // ─── Innovation Feature #2: Predictive Yield & Revenue Forecast ───
+    yieldForecast: tool({
+      description:
+        "Predict yield and revenue for a crop. Use when farmer asks about expected harvest, income, profit, revenue estimation, or yield prediction.",
+      inputSchema: z.object({
+        crop: z.string().describe("Crop name"),
+        landSizeAcres: z.number().optional().describe("Land size in acres"),
+        sowingDate: z.string().optional().describe("Sowing date (YYYY-MM-DD format)"),
+        region: z.string().optional().describe("Region or state"),
+      }),
+      execute: async ({ crop, landSizeAcres, sowingDate, region }: {
+        crop: string; landSizeAcres?: number; sowingDate?: string; region?: string;
+      }) => {
+        try {
+          const forecast = await generateYieldForecast({ crop, landSizeAcres, sowingDate, region, language });
+          return {
+            action: "yield_forecast",
+            ...forecast,
+            instruction: `Present the yield and revenue forecast clearly with tables. Show min/expected/max ranges. Highlight risk factors and optimization tips. Show net profit after costs. ${langReminder}`,
+          };
+        } catch {
+          return {
+            action: "yield_forecast_fallback",
+            crop,
+            landSizeAcres: landSizeAcres || 2,
+            instruction: `Yield forecast engine failed. Provide estimates from your knowledge for ${crop} on ${landSizeAcres || 2} acres in ${region || 'India'}. Include yield range, revenue estimate, and key risks. ${langReminder}`,
+          };
+        }
+      },
+    }),
+
+    // ─── Innovation Feature #10: AI Farming Calendar ───
+    farmingCalendar: tool({
+      description:
+        "Generate a personalized farming calendar with week-by-week tasks. Use when farmer asks for a farming schedule, crop calendar, activity plan, or 'what should I do this week'.",
+      inputSchema: z.object({
+        crop: z.string().describe("Crop name"),
+        sowingDate: z.string().describe("Sowing date (YYYY-MM-DD format). If unknown, use today's date."),
+        region: z.string().optional().describe("Region or state for localized advice"),
+      }),
+      execute: async ({ crop, sowingDate, region }: {
+        crop: string; sowingDate: string; region?: string;
+      }) => {
+        try {
+          const calendar = await generateFarmingCalendar({ crop, sowingDate, region, language });
+          return {
+            action: "farming_calendar",
+            cropName: calendar.cropName,
+            currentWeek: calendar.currentWeek,
+            currentPhase: calendar.currentPhase,
+            totalDuration: calendar.totalDuration,
+            upcomingAlerts: calendar.upcomingAlerts,
+            weeklyTasks: calendar.weeklyTasks.slice(
+              Math.max(0, calendar.currentWeek - 2),
+              calendar.currentWeek + 3
+            ), // Show 5 weeks around current
+            instruction: `Present the farming calendar as a clear timeline. Highlight the CURRENT WEEK prominently. Show upcoming critical alerts at the top. Format tasks with emojis by category. ${langReminder}`,
+          };
+        } catch {
+          return {
+            action: "farming_calendar_fallback",
+            crop,
+            sowingDate,
+            instruction: `Calendar generation failed. Provide a week-by-week farming plan for ${crop} sowed on ${sowingDate} from your knowledge. Include fertilizer, irrigation, and pest schedules. ${langReminder}`,
+          };
+        }
+      },
+    }),
+
+    // ─── Innovation Feature #3: AI Price Negotiation ───
+    priceNegotiation: tool({
+      description:
+        "Suggest optimal pricing for produce. Use when farmer asks about pricing, how much to charge, fair price, or market rate comparison.",
+      inputSchema: z.object({
+        cropName: z.string().describe("Name of the crop to price"),
+        quantity: z.string().describe("Quantity available"),
+        quality: z.string().optional().describe("Quality grade (A/B/C or description)"),
+        region: z.string().optional().describe("Region or state"),
+      }),
+      execute: async ({ cropName, quantity, quality, region }: {
+        cropName: string; quantity: string; quality?: string; region?: string;
+      }) => {
+        try {
+          // Query existing listings for comparison
+          const existingListings = await prisma.listing.findMany({
+            where: {
+              cropName: { contains: cropName, mode: "insensitive" },
+              status: "ACTIVE",
+            },
+            orderBy: { createdAt: "desc" },
+            take: 10,
+            select: { pricePerUnit: true, quantity: true, unit: true, createdAt: true },
+          });
+
+          const avgPrice = existingListings.length > 0
+            ? Math.round(existingListings.reduce((sum, l) => sum + l.pricePerUnit, 0) / existingListings.length)
+            : null;
+          const minPrice = existingListings.length > 0
+            ? Math.min(...existingListings.map((l) => l.pricePerUnit))
+            : null;
+          const maxPrice = existingListings.length > 0
+            ? Math.max(...existingListings.map((l) => l.pricePerUnit))
+            : null;
+
+          return {
+            action: "price_negotiation",
+            cropName,
+            quantity,
+            quality: quality || "Standard",
+            platformData: {
+              avgPrice,
+              minPrice,
+              maxPrice,
+              listingCount: existingListings.length,
+            },
+            instruction: `Provide pricing advice:
+1. Show current platform prices (avg: ₹${avgPrice || '?'}/kg, range: ₹${minPrice || '?'}-₹${maxPrice || '?'}/kg, ${existingListings.length} listings)
+2. Suggest an OPTIMAL price with reasoning
+3. Calculate potential extra earnings vs average
+4. Mention factors: quality ${quality || 'standard'}, quantity ${quantity}, season, demand
+5. Give a negotiation range: minimum acceptable ↔ ideal ↔ premium
+${langReminder}`,
+          };
+        } catch {
+          return {
+            action: "price_negotiation_fallback",
+            cropName,
+            quantity,
+            instruction: `Provide pricing advice for ${quantity} of ${cropName} from your knowledge of Indian mandi rates. Suggest optimal price, negotiation range, and earning potential. ${langReminder}`,
+          };
+        }
+      },
+    }),
+
+    // ─── Innovation Feature #9: Smart Scheme Auto-Apply ───
+    schemeAutoApply: tool({
+      description:
+        "Generate document checklist and pre-filled application info for government schemes. Use when farmer asks to apply for a scheme, needs application help, or asks about documents needed.",
+      inputSchema: z.object({
+        schemeName: z.string().describe("Name of the government scheme"),
+        category: z.string().optional().describe("Scheme category (subsidy, loan, insurance, etc.)"),
+      }),
+      execute: async ({ schemeName, category }: {
+        schemeName: string; category?: string;
+      }) => {
+        // Get farmer profile to pre-fill
+        let profile: { name?: string | null; phone?: string | null; crops?: string[]; landSizeAcres?: number | null; state?: string | null } | null = null;
+        if (userId) {
+          profile = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { name: true, phone: true, crops: true, landSizeAcres: true, state: true },
+          });
+        }
+
         return {
-          action: "soil_analysis",
-          description,
-          crop: crop || "general",
-          region: region || "India",
-          instruction: `Analyze the soil condition described: "${description}". Provide:
-1. Likely soil health issues based on the description
-2. pH and nutrient recommendations
-3. Organic amendments (compost, vermicompost, bio-fertilizers)
-4. Chemical corrections if needed with Indian brands and INR costs
-5. Crop-specific soil preparation tips${crop ? ` for ${crop}` : ""}
-6. Long-term soil health improvement plan
+          action: "scheme_auto_apply",
+          schemeName,
+          category: category || "general",
+          farmerProfile: profile ? {
+            name: profile.name || "[Fill Name]",
+            phone: profile.phone || "[Fill Phone]",
+            crops: profile.crops?.join(", ") || "[Fill Crops]",
+            landSize: profile.landSizeAcres ? `${profile.landSizeAcres} acres` : "[Fill Land Size]",
+            state: profile.state || "[Fill State]",
+          } : null,
+          instruction: `Help the farmer apply for "${schemeName}":
+1. List ALL required documents (Aadhaar, land records, bank passbook, etc.)
+2. Provide step-by-step application process
+3. Pre-fill available info from farmer profile: ${profile ? `Name: ${profile.name}, Phone: ${profile.phone}, Crops: ${profile.crops?.join(', ')}, Land: ${profile.landSizeAcres} acres, State: ${profile.state}` : 'No profile data'}
+4. Highlight CRITICAL deadlines
+5. Mention nearest office/portal where they can submit
+6. If this is a digital scheme, provide the exact website URL
 ${langReminder}`,
         };
+      },
+    }),
+
+    // ─── Tier 3: Micro-Climate Weather Alerts ───
+    weatherCalendarAlerts: tool({
+      description:
+        "Get AI-powered micro-climate weather alerts combined with farming calendar advice. Use when farmer asks about weather alerts, farming weather, crop weather risk, or 'should I spray/sow/harvest today'.",
+      inputSchema: z.object({
+        crops: z.array(z.string()).optional().describe("Crops to generate alerts for"),
+        region: z.string().optional().describe("Region or state"),
+      }),
+      execute: async ({ crops, region }: {
+        crops?: string[]; region?: string;
+      }) => {
+        try {
+          const lat = latitude ?? 21.146;
+          const lon = longitude ?? 79.088;
+          const alerts = await generateWeatherAlerts({
+            latitude: lat,
+            longitude: lon,
+            crops: crops || [],
+            region,
+            language,
+          });
+          return {
+            action: "weather_calendar_alerts",
+            currentConditions: alerts.currentConditions,
+            alerts: alerts.alerts.slice(0, 5),
+            dailyPlan: alerts.dailyFarmingTasks,
+            irrigationAdvice: alerts.irrigationAdvice,
+            instruction: `Present weather alerts by severity (critical first). Show the 5-day farming plan as a table. Include irrigation advice. Use weather emojis. ${langReminder}`,
+          };
+        } catch {
+          return {
+            action: "weather_alerts_fallback",
+            instruction: `Weather alerts failed. Provide general seasonal weather advice for farming. ${langReminder}`,
+          };
+        }
       },
     }),
 
@@ -415,7 +661,7 @@ ${langReminder}`,
       description:
         "Navigate to a specific page. Use when user says 'show me', 'go to', 'open', or wants to visit a section.",
       inputSchema: z.object({
-        route: z.enum(["/dashboard", "/assistant", "/marketplace", "/schemes", "/crop-disease", "/post-produce", "/help"]),
+        route: z.enum(["/dashboard", "/assistant", "/marketplace", "/schemes", "/crop-disease", "/post-produce", "/help", "/crop-health", "/crop-calendar", "/scheme-apply"]),
         reason: z.string().describe("Brief explanation of why navigating here"),
       }),
       execute: async ({ route, reason }: { route: string; reason: string }) => ({
@@ -452,9 +698,18 @@ export async function POST(req: Request) {
     const session = await auth();
     const userId = session?.user?.id || null;
 
+    // Fetch farmer profile for personalization
+    let farmerProfile: FarmerProfile | null = null;
+    if (userId) {
+      farmerProfile = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { name: true, crops: true, landSizeAcres: true, state: true, incomeRange: true },
+      });
+    }
+
     const prunedMessages = pruneMessages(messages);
     const modelMessages = await convertToModelMessages(prunedMessages);
-    const systemPrompt = buildSystemPrompt(language);
+    const systemPrompt = buildSystemPrompt(language, farmerProfile);
     const tools = buildTools(userId, lat, lon, language);
 
     const result = streamText({
