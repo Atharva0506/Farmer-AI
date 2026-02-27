@@ -11,6 +11,7 @@
  * - navigate:       client-side app navigation
  */
 import { google } from "@ai-sdk/google";
+import { getGeminiModel } from "@/lib/gemini";
 import { streamText, convertToModelMessages, stepCountIs, tool } from "ai";
 import { z } from "zod";
 import { checkRateLimit, getClientIP, rateLimitResponse } from "@/lib/rate-limit";
@@ -713,7 +714,7 @@ export async function POST(req: Request) {
     const tools = buildTools(userId, lat, lon, language);
 
     const result = streamText({
-      model: google("gemini-2.5-flash"),
+      model: getGeminiModel(),
       system: systemPrompt,
       messages: modelMessages,
       stopWhen: stepCountIs(3),

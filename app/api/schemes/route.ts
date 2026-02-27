@@ -1,4 +1,5 @@
 import { google } from "@ai-sdk/google";
+import { getGeminiModel } from "@/lib/gemini";
 import { streamText } from "ai";
 import { NextResponse } from "next/server";
 import { checkRateLimit, getClientIP, rateLimitResponse } from "@/lib/rate-limit";
@@ -31,7 +32,7 @@ export async function POST(req: Request) {
     // Follow-up Question Mode (streaming)
     if (question) {
       const result = streamText({
-        model: google("gemini-2.5-flash"),
+        model: getGeminiModel(),
         tools: { google_search: google.tools.googleSearch({}) },
         system: `You are KrishiMitra AI, an expert on agricultural schemes for Indian farmers.
 CRITICAL: Respond ONLY in ${langName}. Never use any other language.
@@ -45,7 +46,7 @@ ${farmerProfile}`,
       });
 
       // Log usage in background
-      result
+      (result as any)
         .then((finalResult: any) => {
           const usage = extractUsage(finalResult);
           logApiUsage({
@@ -54,7 +55,7 @@ ${farmerProfile}`,
             durationMs: Date.now() - startTime,
           });
         })
-        .catch(() => {});
+        .catch(() => { });
 
       return result.toTextStreamResponse();
     }

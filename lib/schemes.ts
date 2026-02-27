@@ -2,7 +2,7 @@
  * lib/schemes.ts — Shared scheme search logic.
  * Used by /api/schemes route AND the chat route's findSchemes tool.
  */
-import { google } from "@ai-sdk/google";
+import { getGeminiModel } from "@/lib/gemini";
 import { generateObject } from "ai";
 import { z } from "zod";
 import {
@@ -125,7 +125,7 @@ export async function searchSchemes(
 
   // ─── LLM call with Google Search grounding ──────────
   const searchResult = await generateObject({
-    model: google("gemini-2.5-flash"),
+    model: getGeminiModel(),
     schema: schemeSchema,
     prompt: `Search the web for the latest Indian agricultural schemes, subsidies, and support programs for this farmer:
 

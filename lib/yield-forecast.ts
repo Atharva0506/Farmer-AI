@@ -2,7 +2,7 @@
  * lib/yield-forecast.ts — Predictive Yield & Revenue Forecast.
  * Innovation Feature #2: Turns reactive advice into proactive financial planning.
  */
-import { google } from "@ai-sdk/google";
+import { getGeminiModel } from "@/lib/gemini";
 import { generateObject } from "ai";
 import { z } from "zod";
 import {
@@ -86,7 +86,7 @@ export async function generateYieldForecast(
     const today = new Date().toISOString().split("T")[0];
 
     const result = await generateObject({
-        model: google("gemini-2.5-flash"),
+        model: getGeminiModel(),
         schema: yieldForecastSchema,
         system: `You are KrishiMitra AI, an expert Indian agricultural economist and agronomist.
 ALL text MUST be in ${langName}.

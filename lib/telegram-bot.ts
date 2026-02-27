@@ -3,7 +3,7 @@
  * Exposes the AI assistant via Telegram — farmers don't need to install any app.
  * Uses the Telegram Bot API directly (no npm package needed).
  */
-import { google } from "@ai-sdk/google";
+import { getGeminiModel } from "@/lib/gemini";
 import { generateText, tool } from "ai";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
@@ -264,7 +264,7 @@ async function processTelegramPhoto(message: {
         const startTime = Date.now();
 
         const result = await generateText({
-            model: google("gemini-2.5-flash"),
+            model: getGeminiModel(),
             system: `You are KrishiMitra AI (कृषि मित्र), a crop disease expert on Telegram.
 Analyze the uploaded crop/plant image and identify diseases, pests, or nutrient deficiencies.
 Provide: 1) Disease name 2) Severity 3) Cause 4) Treatment (chemical + organic with Indian brands) 5) Prevention
@@ -352,7 +352,7 @@ Supported: Hindi 🇮🇳, Marathi, English`);
 
     try {
         const result = await generateText({
-            model: google("gemini-2.5-flash"),
+            model: getGeminiModel(),
             system: `You are KrishiMitra AI (कृषि मित्र), a farming assistant on Telegram.
 You help Indian farmers with crop advice, disease identification, weather, schemes, and market info.
 RESPOND ENTIRELY in ${langName}. Be concise — Telegram has character limits.
@@ -361,6 +361,7 @@ If the farmer asks about something you can use a tool for, USE the tool.
 Keep responses under 2000 characters.`,
             messages: [{ role: "user" as const, content: userText }],
             tools: buildTelegramTools(language),
+            // @ts-ignore - maxSteps is supported at runtime
             maxSteps: 3,
         });
 

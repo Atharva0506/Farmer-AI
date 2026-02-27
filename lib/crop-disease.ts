@@ -2,7 +2,7 @@
  * lib/crop-disease.ts — Shared crop disease analysis logic.
  * Used by /api/crop-disease route AND the chat route's diseaseCheck tool.
  */
-import { google } from "@ai-sdk/google";
+import { getGeminiModel } from "@/lib/gemini";
 import { generateObject } from "ai";
 import { z } from "zod";
 import sharp from "sharp";
@@ -195,7 +195,7 @@ Use simple farmer-friendly language. Costs in ₹. Include both chemical and org
   }
 
   const result = await generateObject({
-    model: google("gemini-2.5-flash"),
+    model: getGeminiModel(),
     schema: diseaseReportSchema,
     system: systemPrompt,
     messages,

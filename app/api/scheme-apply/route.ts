@@ -2,7 +2,7 @@
  * /api/scheme-apply — POST endpoint for Smart Scheme Auto-Apply.
  * Generates structured document checklist with pre-filled farmer data.
  */
-import { google } from "@ai-sdk/google";
+import { getGeminiModel } from "@/lib/gemini";
 import { generateObject } from "ai";
 import { z } from "zod";
 import { auth } from "@/auth";
@@ -88,7 +88,7 @@ export async function POST(req: Request) {
         const startTime = Date.now();
 
         const result = await generateObject({
-            model: google("gemini-2.5-flash"),
+            model: getGeminiModel(),
             schema: schemeApplicationSchema,
             system: `You are KrishiMitra AI, an expert on Indian agricultural government schemes.
 ALL text MUST be in ${langName}.

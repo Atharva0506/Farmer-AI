@@ -3,7 +3,7 @@
  * Innovation Feature #10: Combines weather data + crop lifecycle for proactive alerts.
  * Fetches real weather from Open-Meteo and generates crop-specific farming alerts.
  */
-import { google } from "@ai-sdk/google";
+import { getGeminiModel } from "@/lib/gemini";
 import { generateObject } from "ai";
 import { z } from "zod";
 import { logApiUsage, extractUsage } from "@/lib/usage-logger";
@@ -89,7 +89,7 @@ export async function generateWeatherAlerts(
     const weatherData = await weatherRes.json();
 
     const result = await generateObject({
-        model: google("gemini-2.5-flash"),
+        model: getGeminiModel(),
         schema: weatherAlertSchema,
         system: `You are KrishiMitra AI, an expert Indian agricultural weather advisor.
 ALL text MUST be in ${langName}.

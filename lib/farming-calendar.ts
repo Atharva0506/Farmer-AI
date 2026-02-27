@@ -2,7 +2,7 @@
  * lib/farming-calendar.ts — AI-generated personalized farming calendar.
  * Innovation Feature #10: Transforms the app from advisory → daily planner.
  */
-import { google } from "@ai-sdk/google";
+import { getGeminiModel } from "@/lib/gemini";
 import { generateObject } from "ai";
 import { z } from "zod";
 import {
@@ -86,7 +86,7 @@ export async function generateFarmingCalendar(
     const today = new Date().toISOString().split("T")[0];
 
     const result = await generateObject({
-        model: google("gemini-2.5-flash"),
+        model: getGeminiModel(),
         schema: farmingCalendarSchema,
         system: `You are KrishiMitra AI, an expert Indian agricultural planner.
 ALL text MUST be in ${langName}.

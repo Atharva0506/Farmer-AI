@@ -2,7 +2,7 @@
  * lib/soil-analysis.ts — Structured soil health analysis using Gemini.
  * Replaces the passthrough instruction in the soilAnalysis chat tool.
  */
-import { google } from "@ai-sdk/google";
+import { getGeminiModel } from "@/lib/gemini";
 import { generateObject } from "ai";
 import { z } from "zod";
 import {
@@ -89,7 +89,7 @@ export async function analyzeSoil(
     }
 
     const result = await generateObject({
-        model: google("gemini-2.5-flash"),
+        model: getGeminiModel(),
         schema: soilReportSchema,
         system: `You are KrishiMitra AI, an expert soil scientist specializing in Indian agriculture.
 CRITICAL: ALL text MUST be in ${langName}. Never use any other language.
