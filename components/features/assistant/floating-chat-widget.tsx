@@ -65,6 +65,13 @@ const CompactMarkdown = memo(function CompactMarkdown({ content }: { content: st
   )
 })
 
+// ─── Language code mapping ───────────────
+const LANG_VOICE_MAP: Record<string, string> = {
+  mr: "mr-IN",
+  hi: "hi-IN",
+  en: "en-US",
+}
+
 // ─── Quick Action Chips (i18n keys) ──────────────
 const QUICK_ACTION_KEYS = [
   { icon: "🌾", labelKey: "quickCrop" },
@@ -195,8 +202,17 @@ export function FloatingChatWidget() {
       window.speechSynthesis.cancel()
       const clean = text.replace(/[#*_~`>|[\]()-]/g, "").replace(/\n+/g, ". ").trim()
       const utterance = new SpeechSynthesisUtterance(clean)
-      const langMap: Record<string, string> = { mr: "mr-IN", hi: "hi-IN", en: "en-US" }
-      utterance.lang = langMap[language] || "en-US"
+
+      // Auto-detect language from text for correct TTS voice
+      let detectedLang = LANG_VOICE_MAP[language] || "en-US"
+      if (/[\u0900-\u097F]/.test(clean)) {
+        // Text contains Devanagari
+        // Distinguish Marathi vs Hindi using common Marathi stop words
+        const isMarathi = /(?:^|\s)(आहे|नाही|आणि|पण|माझे|तुम्हाला|शेतकरी|पिक|येईल|होय|करतो|करते|साठी)(?=$|\s|[.,?!])/u.test(clean);
+        detectedLang = isMarathi ? "mr-IN" : "hi-IN";
+      }
+
+      utterance.lang = detectedLang
       utterance.rate = 0.9
       utterance.onend = () => setSpeakingMsgId(null)
       utterance.onerror = () => setSpeakingMsgId(null)

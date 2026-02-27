@@ -162,12 +162,23 @@ export default function AssistantPage() {
         .replace(/\n+/g, ". ")
         .trim()
       const utterance = new SpeechSynthesisUtterance(clean)
+
       const langVoiceMap: Record<string, string> = {
         mr: "mr-IN",
         hi: "hi-IN",
         en: "en-US",
       }
-      utterance.lang = langVoiceMap[language] || "en-US"
+
+      // Auto-detect language from text for correct TTS voice
+      let detectedLang = langVoiceMap[language] || "en-US"
+      if (/[\u0900-\u097F]/.test(clean)) {
+        // Text contains Devanagari
+        // Distinguish Marathi vs Hindi using common Marathi stop words
+        const isMarathi = /(?:^|\s)(आहे|नाही|आणि|पण|माझे|तुम्हाला|शेतकरी|पिक|येईल|होय|करतो|करते|साठी)(?=$|\s|[.,?!])/u.test(clean);
+        detectedLang = isMarathi ? "mr-IN" : "hi-IN";
+      }
+
+      utterance.lang = detectedLang
       utterance.rate = 0.9
       utterance.onend = () => setSpeakingMsgId(null)
       utterance.onerror = () => setSpeakingMsgId(null)

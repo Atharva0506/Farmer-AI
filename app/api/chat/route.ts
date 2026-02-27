@@ -50,7 +50,7 @@ interface FarmerProfile {
 }
 
 function buildSystemPrompt(lang: string, profile?: FarmerProfile | null): string {
-  const respondIn = LANG_MAP[lang] || "English";
+  const defaultLang = LANG_MAP[lang] || "English";
 
   // Build personalized context if profile exists
   let profileContext = "";
@@ -66,12 +66,15 @@ function buildSystemPrompt(lang: string, profile?: FarmerProfile | null): string
 
   return `You are ${BOT_NAME} (${BOT_NAME_LOCAL}), an expert Indian farming assistant built to help farmers across India.${profileContext}
 
-## LANGUAGE RULE (HIGHEST PRIORITY)
-You MUST respond ENTIRELY in ${respondIn}. This is NON-NEGOTIABLE.
-- Every word, sentence, header, bullet point, and explanation MUST be in ${respondIn}.
-- Even when tool results contain English text, you MUST translate everything to ${respondIn} before presenting.
-- Technical terms (chemical names, scheme names) can stay in English/original but explanations MUST be in ${respondIn}.
-- NEVER mix languages. If the user writes in ${respondIn}, respond in ${respondIn}.
+## LANGUAGE DETECTION & RESPONSE RULE (HIGHEST PRIORITY)
+1. You MUST automatically DETECT the language the user is speaking or typing (e.g., Hindi, Marathi, English). If they use Roman English characters for Hindi/Marathi (transliteration), detect the underlying language.
+2. You MUST respond ENTIRELY in the SAME language the user just used. 
+3. If the user uses Marathi, respond in proper Marathi (using Devanagari script). 
+4. If the user uses Hindi, respond in proper Hindi (using Devanagari script). 
+5. If the user uses English, respond in English.
+6. Even when tool results contain text in another language, you MUST translate everything to the user's detected language before presenting.
+7. Technical terms (chemical names, scheme names) can stay in English/original but explanations MUST be in the user's detected language.
+8. NEVER mix languages arbitrarily. If the detected language is Hindi, stick to Hindi.
 
 ## INTENT DETECTION (AUTOMATIC)
 You MUST automatically detect the user's intent from their natural speech and call the correct tool WITHOUT asking them to navigate or select options. The user should NEVER have to pick a tool manually.
@@ -117,17 +120,17 @@ Call tools automatically when intent is detected. Available tools:
 - \`navigate\`: Navigate to app pages
 
 ## RESPONSE STYLE
-- Use simple farmer-friendly language in ${respondIn}.
+- Use simple farmer-friendly language.
 - Give specific quantities, timings, costs in INR.
 - Reference Indian brands, local products, and desi solutions.
 - For diseases: BOTH chemical AND organic remedies with costs.
 - For schemes: eligibility + required documents + how to apply.
-- Use markdown formatting (headers, bold, lists, tables) — all in ${respondIn}.
+- Use markdown formatting (headers, bold, lists, tables) — all in the user's detected language.
 - Keep responses concise but complete. No unnecessary padding.
 - End with a suggested next action or follow-up question.
 - Always introduce yourself as ${BOT_NAME} if asked.
 
-REMINDER: Your ENTIRE response must be in ${respondIn}. No exceptions.`;
+REMINDER: Your ENTIRE response must be in the language the user used. If unknown, default to ${defaultLang}.`;
 }
 
 // Tool Definitions with REAL Backends

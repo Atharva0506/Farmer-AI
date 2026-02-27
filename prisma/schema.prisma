@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client"
   output   = "../lib/generated/prisma"
@@ -13,48 +7,40 @@ datasource db {
   provider = "postgresql"
 }
 
-
-enum Role {
-  FARMER
-  BUYER
-}
-
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  phone         String?   @unique
-  role          Role      @default(FARMER)
-  location      String?   // JSON string or simpler "{lat, lng}"
-  crops         String[]  @default([])
-  landSizeAcres Float?
-  state         String?
-  incomeRange   String?
-  onboarded     Boolean   @default(false)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
+  id             String          @id @default(cuid())
+  name           String?
+  phone          String?         @unique
+  role           Role            @default(FARMER)
+  location       String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  crops          String[]        @default([])
+  incomeRange    String?
+  landSizeAcres  Float?
+  onboarded      Boolean         @default(false)
+  state          String?
   accounts       Account[]
-  sessions       Session[]
   chats          Chat[]
-  listings       Listing[]
   diseaseReports DiseaseReport[]
+  listings       Listing[]
+  sessions       Session[]
 }
 
 model Account {
-  id                 String  @id @default(cuid())
-  userId             String
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String? @db.Text
-  access_token       String? @db.Text
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String? @db.Text
-  session_state      String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -76,31 +62,28 @@ model VerificationToken {
 }
 
 model Chat {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   userId    String
   title     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   messages  Message[]
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Message {
   id        String   @id @default(cuid())
   chatId    String
-  role      String   // 'user' or 'system' or 'assistant'
-  content   String   @db.Text
+  role      String
+  content   String
   createdAt DateTime @default(now())
-
-  chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
 }
 
-// ─── Caching ────────────────────────────────
 model CachedResponse {
   id        String   @id @default(cuid())
   cacheKey  String   @unique
-  response  String   @db.Text // JSON stringified
+  response  String
   expiresAt DateTime
   createdAt DateTime @default(now())
 
@@ -108,7 +91,6 @@ model CachedResponse {
   @@index([expiresAt])
 }
 
-// ─── API Usage Logging ──────────────────────
 model ApiUsageLog {
   id               String   @id @default(cuid())
   route            String
@@ -124,13 +106,6 @@ model ApiUsageLog {
   @@index([createdAt])
 }
 
-// ─── Marketplace Listings ───────────────────
-enum ListingStatus {
-  ACTIVE
-  SOLD
-  EXPIRED
-}
-
 model Listing {
   id           String        @id @default(cuid())
   userId       String
@@ -138,33 +113,41 @@ model Listing {
   quantity     String
   unit         String        @default("kg")
   pricePerUnit Float
-  location     String?       // JSON string "{lat, lng, address}"
+  location     String?
   imageUrl     String?
   description  String?
   status       ListingStatus @default(ACTIVE)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([status])
   @@index([cropName])
   @@index([userId])
 }
 
-// ─── Disease Reports (Persisted AI Analysis) ─
 model DiseaseReport {
-  id            String   @id @default(cuid())
-  userId        String
-  cropName      String
-  disease       String
-  severity      String   // low, medium, high
-  confidence    Float    @default(0)
-  treatments    String   @db.Text // JSON stringified
-  createdAt     DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id         String   @id @default(cuid())
+  userId     String
+  cropName   String
+  disease    String
+  severity   String
+  confidence Float    @default(0)
+  treatments String
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([createdAt])
+}
+
+enum Role {
+  FARMER
+  BUYER
+}
+
+enum ListingStatus {
+  ACTIVE
+  SOLD
+  EXPIRED
 }

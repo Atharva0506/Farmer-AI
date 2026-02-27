@@ -4,6 +4,8 @@ import { logApiUsage } from "@/lib/usage-logger";
 import { analyzeCropDisease, compressImage, type DiseaseReport } from "@/lib/crop-disease";
 import { auth } from "@/auth";
 
+export type { DiseaseReport };
+
 export const maxDuration = 60;
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5 MB

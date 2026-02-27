@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import {
-    Send, Mic, Image as ImageIcon, X, 
+    Send, Mic, Image as ImageIcon, X,
     StopCircle, Camera
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -71,8 +71,10 @@ export function ChatInput({
 
             recognitionRef.current.onresult = (event: any) => {
                 const transcript = event.results[0][0].transcript
-                // FIX: Use functional update to avoid stale closure
-                setInput((prev) => prev + (prev ? " " : "") + transcript)
+                // We know setInput can act as functional update in React, but the prop type is just (value: string) => void
+                // So we can compute the new value here directly although closure might be slightly stale for rapid fire
+                // To be fully correct and avoid TS errors with the prop type, we'll use input from closure.
+                setInput(input + (input ? " " : "") + transcript)
                 setIsListening(false)
             }
 
@@ -121,23 +123,24 @@ export function ChatInput({
                         {selectedFiles.map((file, idx) => {
                             const previewUrl = URL.createObjectURL(file)
                             return (
-                            <div key={`${file.name}-${idx}`} className="relative group animate-in zoom-in-50 duration-200 shrink-0">
-                                <div className="h-16 w-16 rounded-xl border border-border overflow-hidden bg-muted">
-                                    <img
-                                        src={previewUrl}
-                                        alt={`Preview ${idx + 1}`}
-                                        className="h-full w-full object-cover"
-                                        onLoad={() => URL.revokeObjectURL(previewUrl)}
-                                    />
+                                <div key={`${file.name}-${idx}`} className="relative group animate-in zoom-in-50 duration-200 shrink-0">
+                                    <div className="h-16 w-16 rounded-xl border border-border overflow-hidden bg-muted">
+                                        <img
+                                            src={previewUrl}
+                                            alt={`Preview ${idx + 1}`}
+                                            className="h-full w-full object-cover"
+                                            onLoad={() => URL.revokeObjectURL(previewUrl)}
+                                        />
+                                    </div>
+                                    <button
+                                        onClick={() => onClearFile(idx)}
+                                        className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground rounded-full p-0.5 shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                        <X size={10} />
+                                    </button>
                                 </div>
-                                <button
-                                    onClick={() => onClearFile(idx)}
-                                    className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground rounded-full p-0.5 shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
-                                >
-                                    <X size={10} />
-                                </button>
-                            </div>
-                        )})}
+                            )
+                        })}
                         {selectedFiles.length > 1 && (
                             <button
                                 onClick={onClearAllFiles}

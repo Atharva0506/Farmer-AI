@@ -254,7 +254,21 @@ export function VoiceChatModal({ isOpen, onClose }: VoiceChatModalProps) {
       const truncated = clean.length > 800 ? clean.slice(0, 800) + "..." : clean
 
       const utterance = new SpeechSynthesisUtterance(truncated)
-      utterance.lang = LANG_VOICE_MAP[language] || "en-US"
+
+      // Auto-detect language from text for correct TTS voice
+      let detectedLang = LANG_VOICE_MAP[language] || "en-US"
+      if (/[\u0900-\u097F]/.test(truncated)) {
+        // Text contains Devanagari
+        // Distinguish Marathi vs Hindi using common Marathi stop words
+        const isMarathi = /(?:^|\s)(आहे|नाही|आणि|पण|माझे|तुम्हाला|शेतकरी|पिक|येईल|होय|करतो|करते|साठी)(?=$|\s|[.,?!])/u.test(truncated);
+        detectedLang = isMarathi ? "mr-IN" : "hi-IN";
+      } else if (!/[a-zA-Z]/.test(truncated)) {
+        // If no english letters but not devanagari (just numbers?) default to ui lang
+      } else {
+        detectedLang = "en-US"
+      }
+
+      utterance.lang = detectedLang
       utterance.rate = 0.95
       utterance.pitch = 1.0
 

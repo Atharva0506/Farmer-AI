@@ -115,7 +115,20 @@ export default function CropDiseasePage() {
     if ("speechSynthesis" in window) {
       window.speechSynthesis.cancel()
       const utterance = new SpeechSynthesisUtterance(text)
-      utterance.lang = language === "mr" ? "mr-IN" : language === "hi" ? "hi-IN" : "en-US"
+
+      const langVoiceMap: Record<string, string> = {
+        mr: "mr-IN",
+        hi: "hi-IN",
+        en: "en-US",
+      }
+
+      let detectedLang = langVoiceMap[language] || "en-US"
+      if (/[\u0900-\u097F]/.test(text)) {
+        const isMarathi = /(?:^|\s)(आहे|नाही|आणि|पण|माझे|तुम्हाला|शेतकरी|पिक|येईल|होय|करतो|करते|साठी)(?=$|\s|[.,?!])/u.test(text);
+        detectedLang = isMarathi ? "mr-IN" : "hi-IN";
+      }
+
+      utterance.lang = detectedLang
       window.speechSynthesis.speak(utterance)
     }
   }
@@ -330,8 +343,8 @@ export default function CropDiseasePage() {
             </div>
             <div className="bg-muted/50 rounded-xl p-3 text-center">
               <p className="text-xs text-muted-foreground mb-1">{t("severity")}</p>
-              <span className={cn("inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-bold", severityColors[report.severity])}>
-                {severityIcons[report.severity]} {t(report.severity)}
+              <span className={cn("inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-bold", severityColors[report.severity as keyof typeof severityColors])}>
+                {severityIcons[report.severity as keyof typeof severityIcons]} {t(report.severity)}
               </span>
             </div>
             <div className="bg-muted/50 rounded-xl p-3 text-center">
@@ -351,7 +364,7 @@ export default function CropDiseasePage() {
             <Button variant="ghost" size="sm" className="ml-auto text-primary" onClick={() => speakText(report.symptoms.join(". "))}><Volume2 size={14} /></Button>
           </div>
           <ul className="flex flex-col gap-2">
-            {report.symptoms.map((s, i) => (
+            {report.symptoms.map((s: string, i: number) => (
               <li key={i} className="flex items-start gap-2 text-sm text-foreground">
                 <ShieldAlert size={14} className="text-destructive shrink-0 mt-0.5" /> {s}
               </li>
@@ -367,10 +380,10 @@ export default function CropDiseasePage() {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10"><Pill size={16} className="text-primary" /></div>
             <h3 className="font-bold text-foreground">{t("treatment")}</h3>
             <Button variant="ghost" size="sm" className="ml-auto text-primary"
-              onClick={() => speakText(report.treatment.map(tr => `${tr.name}. ${tr.dosage}`).join(". "))}><Volume2 size={14} /></Button>
+              onClick={() => speakText(report.treatment.map((tr: any) => `${tr.name}. ${tr.dosage}`).join(". "))}><Volume2 size={14} /></Button>
           </div>
           <div className="flex flex-col gap-3">
-            {report.treatment.map((tr, i) => (
+            {report.treatment.map((tr: any, i: number) => (
               <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-muted/30 border border-border/50">
                 <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold",
                   tr.type === "chemical" ? "bg-accent/10 text-accent" : tr.type === "organic" ? "bg-primary/10 text-primary" : "bg-warning/10 text-warning-foreground")}>
@@ -401,7 +414,7 @@ export default function CropDiseasePage() {
             <h3 className="font-bold text-foreground">{t("fertilizer")}</h3>
           </div>
           <div className="flex flex-col gap-2">
-            {report.fertilizer.map((f, i) => (
+            {report.fertilizer.map((f: any, i: number) => (
               <div key={i} className="flex items-start gap-2 text-sm text-foreground p-2 rounded-lg bg-muted/20">
                 <CheckCircle size={14} className="text-accent shrink-0 mt-0.5" />
                 <div>
@@ -423,7 +436,7 @@ export default function CropDiseasePage() {
             <h3 className="font-bold text-foreground">{t("preventiveMeasures")}</h3>
           </div>
           <ul className="flex flex-col gap-2">
-            {report.preventiveMeasures.map((m, i) => (
+            {report.preventiveMeasures.map((m: string, i: number) => (
               <li key={i} className="flex items-start gap-2 text-sm text-foreground">
                 <CheckCircle size={14} className="text-primary shrink-0 mt-0.5" /> {m}
               </li>
@@ -447,29 +460,6 @@ export default function CropDiseasePage() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Nearby Resources */}
-      {report.nearbyResources.length > 0 && (
-        <Card className="border border-border mb-4">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10"><MapPin size={16} className="text-primary" /></div>
-              <h3 className="font-bold text-foreground">{t("nearbyResources")}</h3>
-            </div>
-            <div className="flex flex-col gap-2">
-              {report.nearbyResources.map((r, i) => (
-                <div key={i} className="flex items-center gap-3 p-2 rounded-lg bg-muted/20">
-                  <span className={cn("text-xs px-2 py-0.5 rounded-full font-medium",
-                    r.type === "store" ? "bg-primary/10 text-primary" : r.type === "expert" ? "bg-accent/10 text-accent" : "bg-warning/10 text-warning-foreground")}>
-                    {r.type}
-                  </span>
-                  <span className="text-sm text-foreground">{r.suggestion}</span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       <div className="flex gap-3">
         <Button variant="outline" onClick={handleReset} className="flex-1 text-foreground">
